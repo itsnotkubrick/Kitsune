@@ -1,0 +1,201 @@
+# kitsune-managed v2
+# Файл создан панелью Kitsune: правки вне блока dns: при следующей генерации будут потеряны (копия прежнего файла лежит рядом: config.yaml.bak-*)
+# Сгенерировано в панели Kitsune
+# Файл для XKeen: /opt/etc/mihomo/config.yaml, затем xkeen -restart
+# Панель управления: http://192.168.1.1:9090/ui (секрет – поле secret ниже)
+log-level: warning
+allow-lan: true
+redir-port: 5000
+tproxy-port: 5001
+routing-mark: 255
+find-process-mode: "off"
+unified-delay: true
+external-controller: 192.168.1.1:9090
+external-controller-unix: "/opt/etc/mihomo/mihomo.sock"
+secret: test-secret-0123456789ab
+external-ui: zashboard
+external-ui-url: https://github.com/Zephyruso/zashboard/releases/download/v3.29.1/dist.zip
+sniffer:
+  enable: true
+  sniff:
+    HTTP: {ports: [80, 8080]}
+    TLS: {ports: [443, 8443]}
+    QUIC: {ports: [443, 8443]}
+  skip-dst-address:
+    - rule-set:telegram@ipcidr
+proxies:
+  - name: node-a
+    type: vless
+    server: "203.0.113.5"
+    port: 443
+    udp: true
+    uuid: "11111111-2222-4333-8444-555555555555"
+    flow: xtls-rprx-vision
+    network: tcp
+    tls: true
+    servername: www.example.com
+    client-fingerprint: chrome
+    reality-opts:
+      public-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      short-id: ab12cd34
+proxy-providers:
+  subscription:
+    type: http
+    url: https://sub.example.com/s/abc123
+    interval: 3600
+    path: "./providers/subscription.yaml"
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+  subscription2:
+    type: http
+    url: https://sub2.example.com/s/def456
+    interval: 3600
+    path: "./providers/subscription2.yaml"
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+proxy-groups:
+  - name: "Прокси"
+    type: select
+    proxies:
+      - "Авто"
+    include-all: true
+  - name: "Авто"
+    type: url-test
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    include-all: true
+  - name: Re:filter
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: YouTube
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: Telegram
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: Meta
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: X
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: Discord
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: "ИИ"
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: TikTok
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: Spotify
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: Netflix
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: GitHub
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+  - name: Twitch
+    type: select
+    proxies:
+      - "Прокси"
+      - DIRECT
+    include-all: true
+rule-providers:
+  refilter@domain: {type: http, format: mrs, behavior: domain, url: https://github.com/legiz-ru/mihomo-rule-sets/raw/main/re-filter/domain-rule.mrs, path: "./rules/refilter-domain.mrs", interval: 86400}
+  refilter@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://github.com/legiz-ru/mihomo-rule-sets/raw/main/re-filter/ip-rule.mrs, path: "./rules/refilter-ipcidr.mrs", interval: 86400}
+  youtube@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs, path: "./rules/youtube-domain.mrs", interval: 86400}
+  telegram@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/telegram.mrs, path: "./rules/telegram-domain.mrs", interval: 86400}
+  telegram@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/telegram.mrs, path: "./rules/telegram-ipcidr.mrs", interval: 86400}
+  meta@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/meta.mrs, path: "./rules/meta-domain.mrs", interval: 86400}
+  facebook@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/facebook.mrs, path: "./rules/facebook-ipcidr.mrs", interval: 86400}
+  twitter@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/twitter.mrs, path: "./rules/twitter-domain.mrs", interval: 86400}
+  twitter@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/twitter.mrs, path: "./rules/twitter-ipcidr.mrs", interval: 86400}
+  discord@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/discord.mrs, path: "./rules/discord-domain.mrs", interval: 86400}
+  ai@domain: {type: http, format: mrs, behavior: domain, url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs", path: "./rules/ai-domain.mrs", interval: 86400}
+  tiktok@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/tiktok.mrs, path: "./rules/tiktok-domain.mrs", interval: 86400}
+  spotify@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/spotify.mrs, path: "./rules/spotify-domain.mrs", interval: 86400}
+  netflix@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/netflix.mrs, path: "./rules/netflix-domain.mrs", interval: 86400}
+  netflix@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/netflix.mrs, path: "./rules/netflix-ipcidr.mrs", interval: 86400}
+  github@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github.mrs, path: "./rules/github-domain.mrs", interval: 86400}
+  twitch@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/twitch.mrs, path: "./rules/twitch-domain.mrs", interval: 86400}
+  ads@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ads-all.mrs, path: "./rules/ads-domain.mrs", interval: 86400}
+  quic@inline:
+    type: inline
+    behavior: classical
+    payload:
+      - "AND,((NETWORK,UDP),(DST-PORT,443))"
+  my-proxy@inline:
+    type: inline
+    behavior: domain
+    payload:
+      - "+.proxy.example.com"
+      - "+.extra.example.org"
+  my-direct@inline:
+    type: inline
+    behavior: domain
+    payload:
+      - "+.mybank.example.ru"
+rules:
+  - "RULE-SET,ads@domain,REJECT"
+  - "RULE-SET,quic@inline,REJECT"
+  - "RULE-SET,my-direct@inline,DIRECT"
+  - "RULE-SET,my-proxy@inline,Прокси"
+  - "RULE-SET,youtube@domain,YouTube"
+  - "RULE-SET,telegram@domain,Telegram"
+  - "RULE-SET,telegram@ipcidr,Telegram,no-resolve"
+  - "RULE-SET,meta@domain,Meta"
+  - "RULE-SET,facebook@ipcidr,Meta,no-resolve"
+  - "RULE-SET,twitter@domain,X"
+  - "RULE-SET,twitter@ipcidr,X,no-resolve"
+  - "RULE-SET,discord@domain,Discord"
+  - "RULE-SET,ai@domain,ИИ"
+  - "RULE-SET,tiktok@domain,TikTok"
+  - "RULE-SET,spotify@domain,Spotify"
+  - "RULE-SET,netflix@domain,Netflix"
+  - "RULE-SET,netflix@ipcidr,Netflix,no-resolve"
+  - "RULE-SET,github@domain,GitHub"
+  - "RULE-SET,twitch@domain,Twitch"
+  - "RULE-SET,refilter@domain,Re:filter"
+  - "RULE-SET,refilter@ipcidr,Re:filter,no-resolve"
+  - "MATCH,Прокси"

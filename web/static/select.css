@@ -1,0 +1,16 @@
+/* Свой выпадающий список (см. js/select.js): кнопка вместо select и меню в стиле панели */
+.cs-native { display: none !important; }
+.cs-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; box-sizing: border-box; cursor: pointer; text-align: left; font: inherit; color: var(--text-main, var(--text, #f6f6f8)); background: var(--g-inset, var(--inset, rgba(255,255,255,.08))); border: 1px solid var(--g-edge, var(--line, rgba(255,255,255,.18))); border-radius: 14px; padding: 10px 14px; min-height: 42px; }
+.cs-btn:hover { border-color: var(--line-strong, var(--g-edge, rgba(255,255,255,.3))); }
+.cs-btn:focus-visible, .cs-btn[aria-expanded="true"] { outline: none; border-color: var(--g-accent, var(--accent, #fff)); }
+.cs-btn:disabled { opacity: .5; cursor: not-allowed; }
+.cs-tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-ar { flex: none; opacity: .75; transition: transform .15s; }
+.cs-btn[aria-expanded="true"] .cs-ar { transform: rotate(180deg); }
+.cs-pop { position: fixed; z-index: 100000; overflow-y: auto; box-sizing: border-box; padding: 6px; border-radius: 16px; background: var(--pop, var(--g-modal, #3a3a3e)); border: 1px solid var(--g-edge, rgba(255,255,255,.18)); box-shadow: 0 22px 48px -14px rgba(0,0,0,.5); color: var(--text-main, var(--text, #f6f6f8)); font-size: 14px; line-height: 1.35; }
+.cs-it { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; box-sizing: border-box; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.cs-it:hover, .cs-it:focus-visible { outline: none; background: var(--g-chip, rgba(255,255,255,.1)); }
+.cs-it.on { font-weight: 600; }
+.cs-it .cs-ck { flex: none; opacity: 0; color: var(--g-accent, var(--accent, currentColor)); }
+.cs-it.on .cs-ck { opacity: 1; }
+.cs-it.off { opacity: .45; cursor: not-allowed; }

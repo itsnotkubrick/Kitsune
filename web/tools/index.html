@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конфиг для роутера: Keenetic и OpenWrt</title>
+<meta name="description" content="Готовый конфиг Xray или Mihomo и команда для роутера Keenetic (XKeen) или OpenWrt (Nikki) из ссылок на ваш сервер – прямо в браузере">
+<link rel="icon" href="/logo.png">
+<link rel="stylesheet" href="/static/fonts.css">
+<link rel="stylesheet" href="lib/ui.css">
+<link rel="stylesheet" href="lib/glass.css">
+<link rel="stylesheet" href="/static/select.css">
+<script>
+// Оформление берём у панели (внутри неё страница стоит во фрейме) и следим за переключением ◐; отдельно открытая страница остаётся в классике
+(function () {
+  try {
+    if (parent === window) return;
+    var root = parent.document.documentElement, me = document.documentElement;
+    var sync = function () { me.dataset.theme = root.dataset.theme || 'glass'; me.dataset.tone = root.dataset.tone || 'dawn'; };
+    sync();
+    new MutationObserver(sync).observe(root, {attributes: true, attributeFilter: ['data-theme', 'data-tone']});
+  } catch (e) {}
+})();
+</script>
+<script>if (location.search.indexOf("embed=1") > -1) document.documentElement.classList.add("embed");</script>
+</head>
+<body>
+<header><div class="bar">
+  <a class="brand" href="/">Kitsune<span>.panel</span></a>
+  <nav><a href="/">В панель</a></nav>
+</div></header>
+
+<main>
+  <h1>Конфиг для роутера</h1>
+  <p class="lead" id="lead"></p>
+  <div class="privacy">🔒 <span>Всё считается <b>в вашем браузере</b>: ссылки никуда не отправляются</span></div>
+
+  <section class="step">
+    <h2><span class="num">1</span><span id="serversTitle">Ссылки или подписка</span></h2>
+    <textarea id="links" class="mono" spellcheck="false" placeholder="vless://…&#10;hy2://…&#10;По одной на строку. Можно вставить подписку в base64 целиком."></textarea>
+    <div class="parsed" id="parsed"></div>
+    <div id="subBox">
+      <label class="field">Или ссылки на подписки</label>
+      <div id="subList"></div>
+      <button type="button" class="btn-add-sub" id="subAdd">+ Добавить ещё подписку</button>
+      <label class="opt" id="excludePresetOpt" style="margin-top:12px"><input type="checkbox" id="excludePreset"><span>Не использовать служебные узлы подписки<small>«осталось трафика», «срок до…» и подобные записи не попадут в автовыбор сервера</small></span></label>
+      <label class="field" for="excludeRegex" style="margin-top:8px">Свой фильтр узлов (необязательно)</label>
+      <input type="text" id="excludeRegex" class="mono" spellcheck="false" placeholder="например: (?i)test|demo">
+      <div id="excludeNote"></div>
+    </div>
+    <p class="hint" id="serversHint"></p>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">2</span>Что пускать через VPN</h2>
+    <div id="subRt" class="sub-rt" hidden>
+      <div class="sub">Для приложений по подписке</div>
+      <p class="hint">Эти правила приезжают в приложение вместе с подпиской (Clash Verge, FlClash, Mihomo, Stash, sing-box); остальные приложения получают обычный список ссылок. Сервисы, реклама и свои правила ниже общие: они действуют и в подписке, и в конфиге для роутера.</p>
+      <div class="grid two">
+        <div><label class="field" for="rtMode">Режим</label>
+          <select id="rtMode">
+            <option value="all">Весь трафик через VPN</option>
+            <option value="services">Через VPN только выбранные сервисы</option>
+            <option value="local-direct">Местные сайты напрямую, остальное через VPN</option>
+            <option value="custom">Только свои правила (остальное через VPN)</option>
+          </select></div>
+        <div><label class="field" for="rtLocalDns">DNS для прямых доменов</label>
+          <input type="text" id="rtLocalDns" class="mono" spellcheck="false" placeholder="77.88.8.8"></div>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <label class="opt"><input type="checkbox" id="rtRuApps"><span>Местные приложения мимо туннеля<small>банки, госсервисы и другие местные сервисы (Android, Clash и sing-box)</small></span></label>
+      </div>
+      <label class="field" for="rtDoh" style="margin-top:12px">DNS-over-HTTPS для клиентов</label>
+      <input type="text" id="rtDoh" class="mono" spellcheck="false" placeholder="https://1.1.1.1/dns-query">
+      <div class="actions" style="margin-top:12px"><button type="button" class="btn" id="rtSave">Сохранить для подписки</button><span id="rtMsg" class="hint" style="margin:0"></span></div>
+      <p class="hint" id="rtXkNote" hidden>Включена схема групп как в шаблоне XKeen: у неё свой список сервисов. Для подписки берётся список из обычной схемы (снимите галочку «Схема групп как в шаблоне XKeen», чтобы увидеть его).</p>
+      <div class="sub" style="margin-top:18px">Для роутера</div>
+    </div>
+    <div id="basesBox">
+      <div class="sub">Геобазы на роутере</div>
+      <div class="grid" id="bases"></div>
+      <p class="hint">Какие базы вы выбрали при установке XKeen. Не уверены – оставьте ZKeen: её XKeen ставит по умолчанию.</p>
+    </div>
+    <div class="sub">Сервисы</div>
+    <div class="grid" id="servicesXray"></div>
+    <div class="grid" id="servicesMihomo"></div>
+    <div class="grid" id="servicesXk" hidden></div>
+    <div class="sub">Дополнительно</div>
+    <div class="grid">
+      <label class="opt" id="groupXkOpt"><input type="checkbox" id="groupXk"><span>Схема групп как в шаблоне XKeen<small>одна группа «Заблок. сервисы» (с Fallback и Fastest) и по группе на сервис; добавляются Google и CDN. По умолчанию всё идёт через «Заблок. сервисы»; у Google, GitHub и CDN последним вариантом стоит PASS (правило пропускается, как будто его нет). Выбор сервера в zashboard после смены схемы сбрасывается</small></span></label>
+      <label class="opt" id="twitchHqOpt" hidden><input type="checkbox" id="twitchHq"><span>Twitch: видео в высоком качестве через прокси<small>запросы gql.twitch.tv и usher.ttvnw.net идут через «Заблок. сервисы»</small></span></label>
+      <label class="opt" id="perServiceOpt"><input type="checkbox" id="perService"><span>Свой выбор сервера для каждого сервиса<small>в панели можно пустить YouTube через один сервер, а Telegram – через другой</small></span></label>
+      <label class="opt"><input type="checkbox" id="blockQuic" checked><span>Блокировать QUIC<small>видео через прокси грузится стабильнее</small></span></label>
+      <label class="opt" id="adsOpt"><input type="checkbox" id="blockAds"><span>Блокировать рекламу<small id="adsHint"></small></span></label>
+      <label class="opt"><input type="checkbox" id="finalProxy"><span>Всё остальное тоже через прокси<small>иначе остальное идёт напрямую</small></span></label>
+      <label class="opt" id="refilterIpOpt"><input type="checkbox" id="refilterIp" checked><span>re:filter: правила по адресам<small>кроме доменов, учитывать и адреса из списка re:filter (больше памяти на роутере)</small></span></label>
+      <label class="opt" id="vivoxOpt"><input type="checkbox" id="vivox"><span>Голосовой чат в играх (vivox)<small>не разбирать его трафик: чат перестаёт обрываться</small></span></label>
+      <label class="opt" id="keepDnsOpt"><input type="checkbox" id="keepDns" checked><span>Сохранить dns: из текущего файла<small>DNS настраивается в XKeen UI, мы его не меняем</small></span></label>
+    </div>
+    <div class="grid two" style="margin-top:14px">
+      <div><label class="field" for="proxyDomains">Свои сайты через прокси</label>
+        <textarea id="proxyDomains" class="mono" rows="3" style="min-height:76px" placeholder="example.com&#10;chat.example.org"></textarea></div>
+      <div><label class="field" for="directDomains">Свои сайты напрямую</label>
+        <textarea id="directDomains" class="mono" rows="3" style="min-height:76px" placeholder="mybank.ru"></textarea></div>
+    </div>
+    <div class="grid two" id="serviceBox" style="margin-top:14px">
+      <div><label class="field" for="zashboard">Веб-панель zashboard</label>
+        <select id="zashboard"><option value="pinned">закреплённая версия (проверена)</option><option value="latest">самая новая (не проверена нами)</option></select></div>
+      <div><label class="field" for="logLevel">Журнал mihomo</label>
+        <select id="logLevel"><option value="warning">только важное (warning)</option><option value="silent">выключен (silent)</option></select></div>
+    </div>
+    <div id="portHints" class="hint" style="margin-top:10px"></div>
+    <div id="controllerBox" style="margin-top:14px">
+      <label class="field">Доступ к веб-панели mihomo</label>
+      <div class="grid">
+        <label class="opt"><input type="radio" name="ctrl" value="lan" checked><span>LAN-адрес роутера<small>zashboard открывается из домашней сети, снаружи недоступен; XKeen UI подключается через сокет в /opt/etc/mihomo</small></span></label>
+        <label class="opt"><input type="radio" name="ctrl" value="local"><span>Только сам роутер (127.0.0.1)<small>панель недоступна даже из домашней сети</small></span></label>
+        <label class="opt"><input type="radio" name="ctrl" value="all"><span>Все интерфейсы (0.0.0.0)<small>только если вы уверены, что порт 9090 закрыт снаружи</small></span></label>
+      </div>
+      <label class="field" for="controllerIp" style="margin-top:8px">Адрес роутера в домашней сети</label>
+      <input type="text" id="controllerIp" class="mono" value="192.168.1.1" spellcheck="false" inputmode="decimal" autocomplete="off">
+      <div id="controllerNote"></div>
+    </div>
+    <div id="customBox" style="margin-top:14px">
+      <label class="field" for="customRules">Свои правила</label>
+      <textarea id="customRules" class="mono" rows="4" style="min-height:96px" spellcheck="false" placeholder="DOMAIN-SUFFIX,example.com&#10;DOMAIN-KEYWORD,video,DIRECT&#10;IP-CIDR,203.0.113.0/24,REJECT"></textarea>
+      <p class="hint">По одной в строке: <code>ТИП,значение,действие</code>. Типы: DOMAIN, DOMAIN-SUFFIX, DOMAIN-KEYWORD, IP-CIDR, IP-CIDR6, GEOSITE, GEOIP. Действие: PROXY (по умолчанию), DIRECT или REJECT. Кириллические домены переводятся в punycode сами. Эти правила стоят ниже сервисов и выше re:filter.</p>
+    </div>
+    <div id="tagBox">
+      <label class="field" for="tag">Тег основного сервера</label>
+      <input type="text" id="tag" value="vless-reality" spellcheck="false">
+      <p class="hint">XKeen по умолчанию ожидает <code>vless-reality</code>: менять стоит, только если вы правили правила вручную.</p>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">3</span>Готовый конфиг</h2>
+    <div id="result"><div class="empty">Добавьте ссылку в шаге 1: здесь появятся файлы.</div></div>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">4</span>Роутер и команда</h2>
+    <div class="sub">Роутер</div>
+    <div class="grid two" id="routers"></div>
+    <div class="sub" style="margin-top:18px">Ядро</div>
+    <div class="grid two" id="cores"></div>
+    <p class="hint" id="coreNote" hidden></p>
+    <div id="cmdBox" style="margin-top:18px"><div class="empty">Команда появится, когда будет готов конфиг.</div></div>
+  </section>
+
+</main>
+<footer>Kitsune · <span id="tested"></span></footer>
+
+<script src="/static/js/select.js"></script>
+<script src="lib/links.js"></script>
+<script src="lib/xray.js"></script>
+<script src="lib/mihomo-catalog.js"></script>
+<script src="lib/mihomo.js"></script>
+<script src="lib/router.js"></script>
+<script src="lib/ui.js"></script>
+<script>
+(function () {
+  const { $, esc, store } = UI;
+  const XS = PM.XRAY_SERVICES, XB = PM.XRAY_BASES, MS = PM.MIHOMO_SERVICES, MC = PM.MIHOMO_CATALOG, R = PM.ROUTERS, C = PM.CORES;
+  const saved = { xray: JSON.parse(store.get('xray') || '{}'), mihomo: JSON.parse(store.get('mihomo') || '{}') };
+  const hadMihomo = Object.keys(saved.mihomo).length > 0; // до первой записи нового поля: нужна ли заметка о смене адреса панели
+  const migrateNote = hadMihomo && !('controller' in saved.mihomo); // показывается один раз: при следующей загрузке поле уже сохранено
+  const q = new URLSearchParams(location.search);
+  // Секрет панели Mihomo создаётся один раз и хранится в браузере (pm:mihomo, v: 2): один и тот же ввод даёт один и тот же файл,
+  // а zashboard не теряет вход при каждой генерации. Сбросить можно кнопкой в инструкции.
+  const newSecret = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('');
+  let secret = /^[0-9a-f]{24}$/.test(saved.mihomo.secret || '') ? saved.mihomo.secret : newSecret();
+  let revealed = false; // пока false, secret и токены подписки в превью и в команде заменены точками
+  const keepSecret = () => { saved.mihomo.v = 2; saved.mihomo.secret = secret; store.set('mihomo', JSON.stringify(saved.mihomo)); };
+  keepSecret();
+  const pick = (v, list, d) => (list.includes(v) ? v : d);
+  let router = pick(q.get('router') || store.get('router'), Object.keys(R), 'keenetic');
+  let core = pick(q.get('core') || store.get('core'), Object.keys(C), 'mihomo');
+  if (!R[router].cores.includes(core)) core = R[router].cores[0];
+  let tab = null, files = null;
+
+  const radio = (name, id, on, off, label, hint) =>
+    '<label class="opt' + (on ? ' on' : '') + (off ? ' off' : '') + '"><input type="radio" name="' + name + '" value="' + id + '"' +
+    (on ? ' checked' : '') + (off ? ' disabled' : '') + '><span>' + esc(label) + '<small>' + esc(hint) + '</small></span></label>';
+  function drawChoices() {
+    $('#routers').innerHTML = Object.keys(R).map((k) => radio('router', k, k === router, false, R[k].label, R[k].hint)).join('');
+    $('#cores').innerHTML = Object.keys(C).map((k) => radio('core', k, k === core, !R[router].cores.includes(k), C[k].label, C[k].hint)).join('');
+    $('#coreNote').hidden = router !== 'openwrt';
+    $('#coreNote').textContent = 'На OpenWrt конфиг ставится в Nikki, а он работает на ядре Mihomo.';
+  }
+
+  const svcHtml = (list, set, name, xk) => list.map((s) =>
+    '<label class="opt" data-svc="' + s.id + '"><input type="checkbox" name="' + name + '" value="' + s.id + '"' +
+    ((set.services ? set.services.includes(s.id) : (xk ? s.xkeen.on : s.on)) ? ' checked' : '') + '><span>' + esc(s.label) +
+    '<small>' + esc(s.hint || '') + '</small></span></label>').join('');
+  $('#bases').innerHTML = Object.keys(XB).map((k) =>
+    '<label class="opt"><input type="checkbox" name="base" value="' + k + '"' + ((saved.xray.bases || ['zkeen']).includes(k) ? ' checked' : '') + '>' +
+    '<span>' + esc(XB[k].label) + '<small>' + esc(XB[k].hint) + '</small></span></label>').join('');
+  $('#servicesXray').innerHTML = svcHtml(XS, saved.xray, 'svcX');
+  $('#servicesMihomo').innerHTML = svcHtml(MS, saved.mihomo, 'svcM');
+  $('#servicesXk').innerHTML = svcHtml(MC.filter((s) => s.xkeen), { services: saved.mihomo.servicesXk }, 'svcK', true);
+  if (saved.mihomo.groupModel === 'xkeen') $('#groupXk').checked = true;
+  if (saved.mihomo.twitchHq) $('#twitchHq').checked = true;
+  ['blockQuic', 'blockAds', 'finalProxy'].forEach((k) => { if (k in saved[core]) $('#' + k).checked = saved[core][k]; });
+  if ('perService' in saved.mihomo) $('#perService').checked = saved.mihomo.perService;
+  if ('keepDns' in saved.mihomo) $('#keepDns').checked = saved.mihomo.keepDns;
+  if (saved.mihomo.customRules) $('#customRules').value = saved.mihomo.customRules;
+  ['refilterIp', 'vivox', 'excludePreset'].forEach((k) => { if (k in saved.mihomo) $('#' + k).checked = saved.mihomo[k]; });
+  if (['lan', 'local', 'all'].includes(saved.mihomo.controller)) (document.querySelector('input[name=ctrl][value=' + saved.mihomo.controller + ']') || {}).checked = true;
+  if (typeof saved.mihomo.controllerIp === 'string' && saved.mihomo.controllerIp) $('#controllerIp').value = saved.mihomo.controllerIp;
+  if (typeof saved.mihomo.excludeRegex === 'string') $('#excludeRegex').value = saved.mihomo.excludeRegex;
+  if (['pinned', 'latest'].includes(saved.mihomo.zashboard)) $('#zashboard').value = saved.mihomo.zashboard;
+  if (['warning', 'silent'].includes(saved.mihomo.logLevel)) $('#logLevel').value = saved.mihomo.logLevel;
+  if (saved.xray.tag) $('#tag').value = saved.xray.tag;
+
+  const checked = (n) => Array.from(document.querySelectorAll('input[name=' + n + ']:checked')).map((i) => i.value);
+  // Несколько подписок: каждая в своей строке, пустые строки пропускаются.
+  const isUrl = (u) => /^https?:\/\/\S+$/.test(u);
+  const subValues = () => Array.from(document.querySelectorAll('#subList input')).map((i) => i.value.trim()).filter(Boolean);
+  function addSubRow(value) {
+    const row = document.createElement('div');
+    row.className = 'sub-row';
+    row.innerHTML = '<input type="url" class="mono" spellcheck="false" placeholder="https://…"><button type="button" class="sub-del" title="Убрать">×</button>';
+    row.querySelector('input').value = value || '';
+    row.querySelector('.sub-del').addEventListener('click', () => {
+      if (document.querySelectorAll('#subList .sub-row').length > 1) row.remove(); else row.querySelector('input').value = '';
+      render();
+    });
+    $('#subList').appendChild(row);
+  }
+  addSubRow('');
+  $('#subAdd').addEventListener('click', () => { addSubRow(''); document.querySelector('#subList .sub-row:last-child input').focus(); });
+  function syncGroupModel() {
+    const x = core === 'xray', xk = !x && $('#groupXk').checked;
+    $('#groupXkOpt').hidden = x; $('#servicesMihomo').hidden = x || xk; $('#servicesXk').hidden = !xk;
+    $('#twitchHqOpt').hidden = !xk; $('#perServiceOpt').hidden = x || xk;
+  }
+  $('#groupXk').addEventListener('change', () => { syncGroupModel(); });
+  function opts() {
+    const o = {
+      blockQuic: $('#blockQuic').checked, blockAds: $('#blockAds').checked, finalProxy: $('#finalProxy').checked,
+      proxyDomains: $('#proxyDomains').value, directDomains: $('#directDomains').value, customRules: $('#customRules').value,
+      controller: (document.querySelector('input[name=ctrl]:checked') || {}).value || 'lan', controllerIp: $('#controllerIp').value.trim(), excludePreset: $('#excludePreset').checked, excludeRegex: $('#excludeRegex').value.trim(), refilterIp: $('#refilterIp').checked, vivox: $('#vivox').checked, zashboard: $('#zashboard').value, logLevel: $('#logLevel').value,
+    };
+    if (core === 'xray') return Object.assign(o, { bases: checked('base'), services: checked('svcX'), tag: $('#tag').value.trim() || 'vless-reality' });
+    const subs = subValues();
+    const xk = $('#groupXk').checked;
+    return Object.assign(o, { groupModel: xk ? 'xkeen' : undefined, twitchHq: xk && $('#twitchHq').checked, services: checked(xk ? 'svcK' : 'svcM'), perService: $('#perService').checked, subscriptions: subs.filter(isUrl), badSubscription: subs.some((u) => !isUrl(u)), secret, target: router === 'openwrt' ? 'nikki' : 'xkeen' });
+  }
+
+  // Без нужной базы V2Fly сервис недоступен: галочку снимаем, но помним выбор до возвращения базы.
+  function syncXray(o) {
+    XS.forEach((s) => {
+      const el = document.querySelector('[data-svc="' + s.id + '"]');
+      if (!el || !el.querySelector('input[name=svcX]')) return;
+      const box = el.querySelector('input'), ok = PM.xrayServiceAvailable(s, o.bases);
+      if (!ok && !box.disabled) { box.dataset.want = box.checked ? '1' : ''; box.checked = false; }
+      if (ok && box.disabled) box.checked = box.dataset.want === '1';
+      el.classList.toggle('off', !ok);
+      box.disabled = !ok;
+      const need = Object.keys(XB).filter((b) => s[b]).map((b) => XB[b].label).join(' или ');
+      el.querySelector('small').textContent = ok ? (s.hint || '') : 'нужна база ' + need;
+    });
+    const ads = o.bases.includes('v2fly'), box = $('#blockAds');
+    if (!ads && !box.disabled) { box.dataset.want = box.checked ? '1' : ''; box.checked = false; }
+    if (ads && box.disabled) box.checked = box.dataset.want === '1';
+    $('#adsOpt').classList.toggle('off', !ads);
+    box.disabled = !ads;
+    $('#adsHint').textContent = ads ? '' : 'нужна база V2Fly';
+  }
+
+  function applyMode() {
+    const x = core === 'xray';
+    $('#lead').innerHTML = x
+      ? 'Вставьте ссылку на свой сервер: получите готовые <code>04_outbounds.json</code> и <code>05_routing.json</code> для XKeen на Keenetic.'
+      : 'Ссылки на серверы или подписка: получите готовый <code>config.yaml</code> с правилами для нужных сервисов, автовыбором быстрого сервера и веб-панелью. Для Keenetic (XKeen) и OpenWrt (Nikki).';
+    $('#serversTitle').textContent = x ? 'Ссылки на серверы' : 'Ссылки или подписка';
+    $('#subBox').hidden = x;
+    $('#basesBox').hidden = !x; $('#tagBox').hidden = !x; 
+    $('#keepDnsOpt').hidden = x || router !== 'keenetic';
+    $('#customBox').hidden = x; $('#serviceBox').hidden = x; $('#controllerBox').hidden = x; $('#refilterIpOpt').hidden = x; $('#vivoxOpt').hidden = x;
+    $('#servicesXray').hidden = !x; syncGroupModel();
+    $('#serversHint').innerHTML = x
+      ? 'Поддерживаются vless (REALITY, TLS, ws, gRPC, xhttp, httpupgrade), vmess, trojan, shadowsocks, Hysteria2 и WireGuard. Несколько серверов: Xray сам выберет самый быстрый. TUIC и AmneziaWG работают через Mihomo.'
+      : 'Подписку роутер скачает сам и будет обновлять каждый час. Поддерживаются vless (REALITY, TLS, ws, gRPC, xhttp), vmess, trojan, shadowsocks, Hysteria2, TUIC, WireGuard и AmneziaWG (ссылки wireguard:// и vpn:// из 3X-UI).';
+    $('#tested').textContent = x ? 'Для Xray 26 и XKeen 2.0' : 'Для Mihomo 1.19 и XKeen 2.0 (Keenetic)';
+    ['blockQuic', 'blockAds', 'finalProxy'].forEach((k) => { if (k in saved[core]) $('#' + k).checked = saved[core][k]; });
+    $('#blockAds').disabled = false; $('#adsOpt').classList.remove('off'); $('#adsHint').textContent = '';
+  }
+
+  const EMPTY = '<div class="empty">Добавьте ссылку в шаге 1: здесь появятся файлы.</div>';
+  function out() { return $('#out'); }
+  // Что показывается на странице. Реальный текст (с secret и токеном подписки) – только в «копировать как есть» и в скачанном файле.
+  let hide = { secret: '', urls: [] };
+  const view = (text) => (core === 'mihomo' && !revealed ? PM.maskMihomo(text, hide) : text);
+  function show() {
+    if (!files || !out()) return;
+    out().textContent = view(files[tab]);
+    $('#dl').textContent = 'Скачать ' + tab;
+    if ($('#reveal')) $('#reveal').textContent = revealed ? 'Скрыть секреты' : 'Показать секреты';
+    if ($('#reveal')) $('#reveal').hidden = core !== 'mihomo';
+  }
+
+  function render() {
+    if (core === 'xray') syncXray(opts());
+    const o = opts();
+    store.set('router', router); store.set('core', core);
+    const keep = core === 'xray'
+      ? { bases: o.bases, services: o.services, tag: o.tag, blockQuic: o.blockQuic, blockAds: o.blockAds, finalProxy: o.finalProxy }
+      : { v: 2, secret, keepDns: $('#keepDns').checked, customRules: o.customRules, controller: o.controller, controllerIp: o.controllerIp, excludePreset: o.excludePreset, excludeRegex: o.excludeRegex, refilterIp: o.refilterIp, vivox: o.vivox, zashboard: o.zashboard, logLevel: o.logLevel, services: o.groupModel ? saved.mihomo.services : o.services, servicesXk: o.groupModel ? o.services : saved.mihomo.servicesXk, groupModel: o.groupModel, twitchHq: o.twitchHq, perService: o.perService, blockQuic: o.blockQuic, blockAds: o.blockAds, finalProxy: o.finalProxy };
+    saved[core] = keep; store.set(core, JSON.stringify(keep));
+    document.querySelectorAll('.opt').forEach((l) => { const i = l.querySelector('input'); if (i) l.classList.toggle('on', i.checked); });
+
+    const parsed = PM.parseText($('#links').value);
+    let r = null, err = '', skipped = [];
+    try {
+      if (core === 'xray') { if (parsed.proxies.length) { r = PM.buildXray(parsed.proxies, o); skipped = r.skipped; } }
+      else if (parsed.proxies.length || o.subscriptions.length) r = PM.buildMihomo(parsed.proxies, o);
+    } catch (e) { err = e.message; }
+    if (core === 'mihomo' && o.badSubscription) err = 'Подписка должна начинаться с http:// или https://';
+    UI.renderParsed($('#parsed'), parsed, skipped);
+
+    if (!r) {
+      files = null; tab = null;
+      $('#result').innerHTML = err ? '<div class="msg err">' + esc(err) + '</div>' : EMPTY;
+      $('#cmdBox').innerHTML = '<div class="empty">Команда появится, когда будет готов конфиг.</div>';
+      return;
+    }
+    if (core === 'xray') {
+      files = {}; Object.keys(r.files).forEach((n) => { files[n] = JSON.stringify(r.files[n], null, 2) + '\n'; });
+    } else files = { 'config.yaml': r.yaml };
+    hide = { secret, urls: o.subscriptions || [] };
+    const names = Object.keys(files);
+    if (!tab || !files[tab]) tab = names[0];
+    // Вкладки пересобираем, только когда меняется набор файлов.
+    const sig = names.join('|') + '|' + core;
+    if (!out() || $('#result').dataset.sig !== sig) {
+      $('#result').dataset.sig = sig;
+      $('#result').innerHTML =
+        '<div class="tabs" id="tabs">' + names.map((n) => '<button data-tab="' + esc(n) + '"' + (n === tab ? ' class="on"' : '') + '>' + esc(n) + '</button>').join('') + '</div>' +
+        '<div class="out"><pre class="code" id="out"></pre></div>' +
+        '<div class="actions"><button class="btn" id="cp">Копировать как есть</button><button class="btn ghost" id="reveal"></button><button class="btn ghost" id="dl"></button></div><div id="note"></div>';
+      UI.tabs($('#tabs'), (t) => { tab = t; show(); });
+      $('#cp').onclick = (e) => UI.copy(files[tab], e.target);
+      $('#reveal').onclick = () => { revealed = !revealed; render(); };
+      $('#dl').onclick = () => UI.download(tab, files[tab]);
+    }
+    show();
+    const notes = [];
+    if (core === 'xray' && r.count > 1) notes.push('Серверов: ' + r.count + '. Xray будет каждую минуту проверять их и выбирать самый быстрый.');
+    if (skipped.length) notes.push('Пропущено: ' + skipped.map((s) => s.name + ' – ' + s.error).join('; '));
+    (r.warnings || []).forEach((w) => notes.push(w));
+    $('#note').innerHTML = notes.map((n) => '<div class="msg warn">' + esc(n) + '</div>').join('');
+
+    if (core === 'mihomo') {
+      const c = o.controller, notes2 = [];
+      if (c === 'all') notes2.push('<div class="msg err">Панель управления будет слушать все интерфейсы (0.0.0.0:9090). Проверьте, что порт 9090 не проброшен наружу, иначе доступ к панели получит любой, кто знает секрет.</div>');
+      else if (c === 'local') notes2.push('<div class="msg warn">Панель будет доступна только с самого роутера: из домашней сети она не откроется.</div>');
+      else if (!PM.validLanIp(o.controllerIp)) notes2.push('<div class="msg err">Адрес роутера не подходит: возьмём ' + esc(PM.MIHOMO_DEFAULT_LAN_IP) + '.</div>');
+      else if (o.controllerIp === PM.MIHOMO_DEFAULT_LAN_IP) notes2.push('<div class="msg warn">Проверьте адрес роутера: по умолчанию подставлен ' + esc(PM.MIHOMO_DEFAULT_LAN_IP) + ', у вас он может быть другим.</div>');
+      if (migrateNote) notes2.push('<div class="msg warn">Адрес панели управления изменился: раньше она слушала все интерфейсы (0.0.0.0), теперь только LAN-адрес роутера. Проверьте адрес ниже; прежний вариант можно выбрать явно.</div>');
+      $('#controllerNote').innerHTML = notes2.join('');
+    }
+    const rc = PM.checkMihomoRegex($('#excludeRegex').value.trim());
+    $('#excludeNote').innerHTML = rc.ok ? '' : '<div class="msg warn">' + esc('Свой фильтр не применён: ' + rc.error) + '</div>';
+    const cmd = PM.routerCommand(router, core, files, { keepDns: $('#keepDns').checked });
+    $('#portHints').innerHTML = core === 'mihomo' && router === 'keenetic' ? PM.mihomoPortHints(o.services).map((h) => '<div>' + esc(h) + '</div>').join('') : '';
+    const how = [
+      '<li>Подключитесь к роутеру: <code>' + esc(R[router].ssh) + '</code></li>',
+      router === 'openwrt' ? '<li>Nikki уже должен быть установлен (как это сделать – в инструкции).</li>' : (core === 'mihomo' ? '<li>Если XKeen сейчас работает на Xray, сначала выполните <code>xkeen -mihomo</code></li>' : ''),
+      '<li>Вставьте команду целиком и нажмите Enter.</li>',
+      core === 'mihomo' && router === 'keenetic' ? '<li>Если вставка в терминал не сработала, скачайте команду как скрипт и отправьте её на роутер: <code>ssh -p 222 root@192.168.x.x \'cat &gt; /tmp/kitsune-apply.sh\' &lt; ~/Downloads/kitsune-apply.sh</code>, затем <code>ssh -p 222 root@192.168.x.x \'sh /tmp/kitsune-apply.sh; rm -f /tmp/kitsune-apply.sh\'</code>.</li>' : '',
+      core === 'mihomo' ? '<li>Панель управления: <code>http://192.168.x.x:9090/ui</code>, секрет: <code id="secretView">' + (revealed ? esc(secret) : '••••••••••••') + '</code> <button type="button" class="btn ghost" id="secretShow">' + (revealed ? 'скрыть' : 'показать') + '</button> <button type="button" class="btn ghost" id="secretReset">сбросить</button></li>' : '<li>Проверить: <code>xkeen -status</code></li>',
+    ].join('');
+    $('#cmdBox').innerHTML = '<p class="hint" style="margin:0 0 12px">' + esc(PM.routerDescribe(router, core)) + ' Вставьте в SSH: <code>' + esc(R[router].ssh) + '</code></p>' +
+      '<pre class="code" id="cmd"></pre><div class="actions"><button class="btn" id="cpc">Копировать как есть</button>' + (core === 'mihomo' && router === 'keenetic' ? '<button class="btn ghost" id="cps">Скачать как скрипт (.sh)</button>' : '') + '</div>' +
+      '<ol class="how">' + how + '</ol>' +
+      (router === 'openwrt' ? '<div class="msg warn">Если команда не сработала, выберите профиль <code>kitsune.yaml</code> в настройках Nikki (LuCI) вручную.</div>' : '');
+    $('#cmd').textContent = view(cmd);
+    $('#cpc').onclick = (e) => UI.copy(cmd, e.target);
+    // Скрипт файлом: вставка длинной команды в терминал иногда ломается. В имени файла нет секретов, на роутере скрипт ничего не печатает целиком.
+    if ($('#cps')) $('#cps').onclick = () => UI.download('kitsune-apply.sh', '#!/bin/sh\n' + cmd);
+    if ($('#secretShow')) {
+      $('#secretShow').onclick = () => { revealed = !revealed; render(); };
+      $('#secretReset').onclick = async () => {
+        const txt = 'Секрет сменится, и панель управления (zashboard) попросит войти заново.';
+        // внутри панели Kitsune показываем её окно, отдельно открытая страница – обычное подтверждение
+        let ok;
+        try { ok = parent !== window && parent.uiConfirm ? await parent.uiConfirm('Сбросить секрет?', txt, 'Сбросить', true) : confirm(txt + ' Сбросить?'); }
+        catch (e) { ok = confirm(txt + ' Сбросить?'); }
+        if (!ok) return;
+        secret = newSecret(); revealed = false; keepSecret(); render();
+      };
+    }
+  }
+
+  function onChoice(e) {
+    const t = e.target;
+    if (t.name === 'router') { router = t.value; if (!R[router].cores.includes(core)) core = R[router].cores[0]; }
+    else if (t.name === 'core') core = t.value;
+    else return false;
+    drawChoices(); applyMode(); tab = null; render();
+    return true;
+  }
+  document.addEventListener('change', (e) => { if (!onChoice(e)) render(); });
+  document.addEventListener('input', (e) => { if (!/^(router|core)$/.test(e.target.name || '')) render(); });
+  // Настройки раздельной маршрутизации хранятся на сервере и общие для подписки клиентов и конфига роутера.
+  // Вне панели (нет входа) запрос не проходит, и страница работает как раньше, на данных браузера.
+  const rt = { ok: false, ids: [] };
+  async function loadServerRouting() {
+    let r;
+    try { r = await fetch('/api/v1/settings/client-routing', { credentials: 'same-origin' }); } catch (e) { return; }
+    if (!r.ok) return;
+    const d = await r.json().catch(() => null);
+    if (!d || !d.routing) return;
+    rt.ok = true; rt.ids = (d.services || []).map((s) => s.id);
+    $('#subRt').hidden = false;
+    const c = d.routing;
+    $('#rtMode').value = c.mode || 'all'; $('#rtLocalDns').value = c.local_dns || ''; $('#rtDoh').value = c.doh || ''; $('#rtRuApps').checked = !!c.ru_apps;
+    // Если на сервере уже сохранено, сервер главный; иначе остаются прежние данные браузера (до первого сохранения).
+    if (d.configured) {
+      const on = new Set(c.services || []);
+      document.querySelectorAll('input[name=svcM]').forEach((i) => { if (rt.ids.includes(i.value)) i.checked = on.has(i.value); });
+      $('#blockAds').checked = !!c.block_ads; $('#customRules').value = c.custom || '';
+      render();
+    }
+    syncXkNote();
+  }
+  function syncXkNote() { if (rt.ok) $('#rtXkNote').hidden = !$('#groupXk').checked || core === 'xray'; }
+  $('#groupXk').addEventListener('change', syncXkNote);
+  $('#rtSave').addEventListener('click', async () => {
+    const body = {
+      mode: $('#rtMode').value, local_dns: $('#rtLocalDns').value.trim(), doh: $('#rtDoh').value.trim(), ru_apps: $('#rtRuApps').checked,
+      services: Array.from(document.querySelectorAll('input[name=svcM]:checked')).map((i) => i.value).filter((v) => rt.ids.includes(v)),
+      block_ads: core === 'xray' ? !!saved.mihomo.blockAds : $('#blockAds').checked, custom: core === 'xray' ? (saved.mihomo.customRules || '') : $('#customRules').value,
+    };
+    $('#rtMsg').textContent = 'Сохраняю…';
+    try {
+      const r = await fetch('/api/v1/settings/client-routing', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      $('#rtMsg').textContent = r.ok ? (d.message || 'Сохранено') : (d.error || 'Не удалось сохранить');
+    } catch (e) { $('#rtMsg').textContent = 'Не удалось сохранить'; }
+  });
+  drawChoices(); applyMode(); render();
+  loadServerRouting();
+  // В панели страница стоит во фрейме: сообщаем высоту, чтобы фрейм не прокручивался отдельно.
+  if (document.documentElement.classList.contains('embed') && window.parent !== window && window.ResizeObserver) {
+    new ResizeObserver(() => window.parent.postMessage({ kitsuneToolsHeight: document.documentElement.scrollHeight }, location.origin)).observe(document.body);
+  }
+})();
+</script>
+<script src="/static/js/i18n-en.js"></script>
+<script src="/static/js/i18n.js"></script>
+<script>
+// Язык выбирается в панели (в родительском окне): при его смене страница во фрейме переключается сразу.
+window.addEventListener('storage', function (e) { if (e.key === 'kitsune_lang' && window.setLang && (e.newValue === 'ru' || e.newValue === 'en')) window.setLang(e.newValue); });
+</script>
+</body>
+</html>

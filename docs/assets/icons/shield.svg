@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56" role="img" aria-label="shield">
+  
+  <rect x="1" y="1" width="54" height="54" rx="15" fill="#1b1b1e" stroke="#ffffff" stroke-opacity="0.16"/>
+  <g transform="translate(14 14) scale(1.1667)" fill="none" stroke="#f6f6f8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></g>
+</svg>

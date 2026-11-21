@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="650" viewBox="0 0 780 650" role="img" aria-label="root@server: kit">
+<rect width="780" height="650" rx="14" fill="#14161b"/><rect x="0.5" y="0.5" width="779" height="649" rx="14" fill="none" stroke="#2a2f3d"/>
+<rect width="780" height="40" rx="14" fill="#1d2027"/><rect y="26" width="780" height="14" fill="#1d2027"/>
+<circle cx="22" cy="20" r="6" fill="#ff5f56"/><circle cx="42" cy="20" r="6" fill="#ffbd2e"/><circle cx="62" cy="20" r="6" fill="#27c93f"/>
+<text x="390" y="25" text-anchor="middle" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#8b919e">root@server: kit</text>
+<text x="22" y="76" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8">  _  ___ _</text>
+<text x="22" y="98" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8"> | |/ (_) |_ ___ _   _ _ __   ___</text>
+<text x="22" y="120" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8"> | ' /| | __/ __| | | | '_ \ / _ \</text>
+<text x="22" y="142" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8"> | . \| | |_\__ \ |_| | | | |  __/</text>
+<text x="22" y="164" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8"> |_|\_\_|\__|___/\__,_|_| |_|\___|</text>
+<text x="22" y="186" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8">  ──────────────────────────────────────</text>
+<text x="22" y="208" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#8b919e">   0. Выйти</text>
+<text x="22" y="230" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   1. Адрес панели и логин</text>
+<text x="22" y="252" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   2. Сбросить пароль администратора</text>
+<text x="22" y="274" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   3. Выключить двухфакторный вход (2FA)</text>
+<text x="22" y="296" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   4. Сменить порт панели</text>
+<text x="22" y="318" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8">  ── Служба ─────────────────────────────</text>
+<text x="22" y="340" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   5. Запустить</text>
+<text x="22" y="362" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   6. Остановить</text>
+<text x="22" y="384" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   7. Перезапустить</text>
+<text x="22" y="406" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   8. Состояние</text>
+<text x="22" y="428" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">   9. Журнал</text>
+<text x="22" y="450" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">  10. Автозапуск: включён</text>
+<text x="22" y="472" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8">  ── Обслуживание ───────────────────────</text>
+<text x="22" y="494" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">  11. Скачать или обновить ядра</text>
+<text x="22" y="516" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">  12. Обновить Kitsune</text>
+<text x="22" y="538" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">  13. Удалить Kitsune</text>
+<text x="22" y="560" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#d7dae0">  14. HTTPS панели (сертификат)</text>
+<text x="22" y="582" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#f6f6f8">  ──────────────────────────────────────</text>
+<text x="22" y="604" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#5fd38d">  Служба: работает  ·  версия 0.1-pre-release</text>
+<text x="22" y="626" xml:space="preserve" font-family="SF Mono,Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="13.5" fill="#ffffff">Выберите пункт [0-14]: ▌</text>
+</svg>

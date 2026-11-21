@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56" role="img" aria-label="phone">
+  
+  <rect x="1" y="1" width="54" height="54" rx="15" fill="#1b1b1e" stroke="#ffffff" stroke-opacity="0.16"/>
+  <g transform="translate(14 14) scale(1.1667)" fill="none" stroke="#f6f6f8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></g>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="154" height="30" viewBox="0 0 154 30" role="img" aria-label="Лицензия: GPL-3.0">
+  <title>Лицензия: GPL-3.0</title>
+  <clipPath id="badge"><rect width="154" height="30" rx="8"/></clipPath>
+  <g clip-path="url(#badge)">
+    <path fill="#242832" d="M0 0h83v30H0z"/>
+    <path fill="#333c48" d="M83 0h71v30h-71z"/>
+    <rect x=".5" y=".5" width="153" height="29" rx="7.5" fill="none" stroke="#fff" stroke-opacity=".16"/>
+  </g>
+  <g font-family="DejaVu Sans,Arial,sans-serif" font-size="12" text-anchor="middle">
+    <text x="41.5" y="19.5" fill="#f7f8fa" font-weight="600">Лицензия</text>
+    <text x="118.5" y="19.5" fill="#fff" font-weight="700">GPL-3.0</text>
+  </g>
+</svg>

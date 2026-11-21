@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="52" viewBox="0 0 240 52" role="img" aria-label="Support my work">
+  <rect x="1.5" y="1.5" width="237" height="49" rx="12" fill="#221B17" stroke="#15110F" stroke-width="3"/>
+  <rect x="1.5" y="1.5" width="237" height="49" rx="12" fill="none" stroke="#93E06F" stroke-width="1.5" opacity=".9"/>
+  <text x="120" y="32" text-anchor="middle" font-family="Rubik, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="800" fill="#FBF6EC">Support my work</text>
+</svg>

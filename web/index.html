@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Kitsune</title>
+  <link rel="icon" type="image/svg+xml" href="/static/logo-fox.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/fonts.css">
+  <script>
+    // Оформление: «Стекло» (по умолчанию) с тонами dawn/night
+    (function () {
+      var d = document.documentElement, t = 'glass', n = 'dawn';
+      try {
+        var st = localStorage.getItem('kitsune-theme'), sn = localStorage.getItem('kitsune-tone');
+        if (sn === 'night') n = sn; // «Полдень», «Классика» и «Неон» убраны: у кого они были сохранены, открывается «Рассвет»
+      } catch (e) {}
+      d.dataset.theme = t; d.dataset.tone = n;
+    })();
+  </script>
+  <script src="/static/js/qrcode.min.js"></script>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/ui2.css">
+  <link rel="stylesheet" href="/static/glass.css">
+  <link rel="stylesheet" href="/static/select.css">
+</head>
+<body>
+
+<div id="auth-panel" class="login-box" style="display: none;">
+  <div style="display: flex; justify-content: flex-end; margin: -6px -6px 6px 0;"><div class="lang-sw" role="group" aria-label="Язык интерфейса / Language"><button type="button" data-lang="ru" aria-label="Русский">RU</button><button type="button" data-lang="en" aria-label="English">EN</button></div></div>
+  <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+    <div class="fox-brand-btn" style="width: 100px; height: 100px; border-radius: 26px;">
+      <img class="fox-brand-avatar logo-glass" src="/static/logo-fox.svg" alt="Kitsune">
+    </div>
+  </div>
+  <h2 style="font-size: 24px; font-weight: 800; letter-spacing: -0.6px;">Kitsune</h2>
+  <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">Авторизация в системе</p>
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <input type="text" id="login-username" class="form-control" placeholder="Логин" autocomplete="username">
+    <input type="password" id="login-password" class="form-control" placeholder="Пароль" autocomplete="current-password">
+    <div id="login-2fa" style="display: none; flex-direction: column; gap: 6px; text-align: left;">
+      <input type="text" id="login-code" class="form-control" placeholder="Код из приложения (6 цифр)" inputmode="numeric" maxlength="7" autocomplete="one-time-code">
+      <span class="form-hint">Включён двухфакторный вход: откройте приложение-аутентификатор и введите текущий код.</span>
+    </div>
+    <div id="login-msg" class="form-hint" role="alert" style="display: none; color: #ff8a8a; text-align: left;"></div>
+    <button class="btn-banner" onclick="handleLoginSubmit()" style="justify-content: center; margin-top: 8px;">
+      Войти
+    </button>
+  </div>
+</div>
+
+<div id="app-panel" class="app-layout" style="display: none;">
+<header class="gtop" id="gtop">
+  <button type="button" class="gtop-logo" onclick="navigateTo('dashboards', document.querySelector('[data-tab=dashboards]'))" title="На главную"><img src="/static/logo-fox.svg" alt="Kitsune"></button>
+  <span class="gtop-brand">Kitsune</span>
+  <button type="button" class="gtop-status" id="gtop-status" data-level="ok" onclick="navigateTo('health', document.querySelector('[data-tab=health]'))" title="Открыть «Здоровье»"><i></i><span id="gtop-status-tx">Проверяю…</span></button>
+  <div class="gtop-search">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input type="search" id="gsearch" placeholder="Поиск пользователей и подключений" autocomplete="off" aria-label="Поиск" oninput="gSearch(this.value)" onfocus="gSearchOpen()" onkeydown="gSearchKey(event)">
+    <div class="gsearch-res" id="gsearch-res" hidden role="listbox"></div>
+  </div>
+  <div class="lang-sw" role="group" aria-label="Язык интерфейса / Language"><button type="button" data-lang="ru" aria-label="Русский">RU</button><button type="button" data-lang="en" aria-label="English">EN</button></div>
+  <button type="button" class="gtop-logout" onclick="handleLogoutSubmit()" title="Выйти из панели">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    <span>Выйти</span>
+  </button>
+</header>
+  
+<header class="appbar">
+  <button type="button" class="appbar-btn" id="drawer-toggle" aria-label="Меню" aria-expanded="false" aria-controls="main-sidebar" onclick="toggleDrawer()">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+  <div class="appbar-title" id="appbar-title" role="heading" aria-level="1">Главная</div>
+  <span class="appbar-side"><div class="lang-sw" role="group" aria-label="Язык интерфейса / Language"><button type="button" data-lang="ru" aria-label="Русский">RU</button><button type="button" data-lang="en" aria-label="English">EN</button></div></span>
+</header>
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+<aside class="sidebar expanded" id="main-sidebar">
+  <button type="button" class="drawer-close" aria-label="Закрыть меню" onclick="closeDrawer()">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+  <div class="sb-brand">
+    <button class="sb-logo" onclick="navigateTo('dashboards', document.querySelector('[data-tab=dashboards]'))" title="На главную">
+      <img class="logo-glass" src="/static/logo-fox.svg" alt="Kitsune">
+    </button>
+    <div class="sb-name"><span class="logo-glass-text">Kitsune</span></div>
+  </div>
+
+  <nav class="nav-list" id="nav-container">
+      <div class="nav-group">ОБЗОР</div>
+      <button class="nav-item" data-tab="dashboards" onclick="navigateTo('dashboards', this)">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg></span><span class="ni-tx">Главная</span>
+      </button>
+      <button class="nav-item" data-tab="health" onclick="navigateTo('health', this)">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></span><span class="ni-tx">Здоровье</span><i class="ni-badge" id="nb-health" hidden></i>
+      </button>
+      <div class="nav-group">ЛЮДИ</div>
+      <button class="nav-item" data-tab="clients" onclick="navigateTo('clients', this)">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span class="ni-tx">Пользователи</span><i class="ni-count" id="nb-clients"></i>
+      </button>
+      <div class="nav-group">ДОСТУП</div>
+      <button class="nav-item" data-tab="inbounds" onclick="navigateTo('inbounds', this)">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></span><span class="ni-tx">Подключения</span>
+      </button>
+      <button class="nav-item" data-tab="cascade" onclick="navigateTo('cascade', this)">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h10"/><path d="M12 8v8"/></svg></span><span class="ni-tx">Каскад</span>
+      </button>
+      <button class="nav-item" data-tab="tools" onclick="navigateTo('tools', this)">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h5"/><path d="M8 12c4 0 4-6 9-6h2"/><path d="M8 12c4 0 4 6 9 6h2"/><polyline points="18 3 21 6 18 9"/><polyline points="18 15 21 18 18 21"/></svg></span><span class="ni-tx">Роутинг</span>
+      </button>
+      <div class="nav-group">СЕРВЕР</div>
+      <button class="nav-item" data-tab="settings" onclick="navigateTo('settings', this)">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span><span class="ni-tx">Настройки</span><i class="ni-badge" id="nb-update" hidden></i>
+      </button>
+      <button class="nav-item" data-tab="audit" onclick="navigateTo('audit', this)">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="ni-tx">Журнал</span>
+      </button>
+  </nav>
+
+  <div class="sb-foot">
+    <a class="nav-item sb-support" href="https://donate.itsnotkubrick.dev/" target="_blank" rel="noopener noreferrer" title="Откроется внешний сайт" aria-label="Поддержать проект (откроется внешний сайт)">
+      <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></span><span class="ni-tx">Поддержать проект</span>
+    </a>
+    <a class="nav-item sb-github" href="https://github.com/itsnotkubrick" target="_blank" rel="noopener noreferrer" title="Откроется внешний сайт" aria-label="GitHub автора (откроется внешний сайт)">
+      <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span><span class="ni-tx">GitHub</span>
+    </a>
+    <a class="nav-item sb-telegram" href="https://t.me/its_not_kubrick" target="_blank" rel="noopener noreferrer" title="Откроется внешний сайт" aria-label="Telegram-канал автора (откроется внешний сайт)">
+      <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M21.4 3.6 2.9 10.7c-1.3.5-1.3 1.2-.2 1.5l4.7 1.5 1.8 5.6c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.2-.5-1.8-1.3-1.4zM8.6 13.4l9.7-6.1c.5-.3.9-.1.5.2l-8.1 7.3-.3 3.4-1.8-4.8z"/></svg></span><span class="ni-tx">Telegram</span>
+    </a>
+    <div class="sb-foot-row">
+      <button class="nav-item sb-logout" onclick="handleLogoutSubmit()" title="Выйти из панели">
+        <span class="ni-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span class="ni-tx">Выйти</span>
+      </button>
+      <button type="button" class="sb-ver js-ver" id="sb-version" onclick="checkVersionClick()" title="Проверить наличие новой версии">&nbsp;</button>
+      <div class="theme-wrap">
+        <button class="toggle-collapse-btn theme-btn" id="theme-btn" onclick="toggleThemeMenu(event)" title="Оформление" aria-label="Сменить оформление" aria-haspopup="true" aria-expanded="false">◐</button>
+        <div class="theme-pop" id="theme-pop" role="menu" hidden>
+          <div class="theme-pop-h">Оформление</div>
+          <button role="menuitem" data-theme-pick="glass:dawn"><i class="sw sw-dawn"></i><b>Рассвет</b></button>
+          <button role="menuitem" data-theme-pick="glass:night"><i class="sw sw-night"></i><b>Ночь</b></button>
+        </div>
+      </div>
+      <button class="toggle-collapse-btn" onclick="toggleSidebarCollapse()" title="Свернуть / развернуть меню">
+        <svg id="collapse-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<main class="workspace">
+  <header class="page-header">
+    <div class="ph-title">
+      <h1 id="page-title">Главная</h1>
+      <p id="page-subtitle">Состояние сервера, ядра и подключений в реальном времени</p>
+    </div>
+  </header>
+
+  <div class="overview-row" style="display: none;">
+    <div class="summary-card">
+      <div class="summary-icon-box">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      </div>
+      <div class="summary-details">
+        <h4>Активных клиентов</h4>
+        <div class="num" id="stat-clients">0</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon-box">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+      </div>
+      <div class="summary-details">
+        <h4>Потребление памяти</h4>
+        <div class="num" id="stat-ram">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 0: Секция Клиенты -->
+  <section id="view-clients" style="display: none; flex-direction: column; gap: 18px;">
+    <div class="tabs-strip" role="tablist" aria-label="Раздел">
+      <button class="tab-btn" role="tab" data-tab="clients" onclick="navigateTo('clients', this)">Пользователи</button>
+      <button class="tab-btn" role="tab" data-tab="templates" onclick="navigateTo('templates', this)">Шаблоны</button>
+      <button class="tab-btn" role="tab" data-tab="groups" onclick="navigateTo('groups', this)">Группы</button>
+    </div>
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="u-search" placeholder="Поиск по имени или заметке" autocomplete="off" oninput="renderUsers()">
+      </div>
+      <div class="chips" id="u-filters"></div>
+      <span class="tb-spacer"></span>
+      <label class="sort-box"><span>Сортировка</span>
+        <select id="u-sort" class="form-control" aria-label="Сортировка" onchange="setUserSort(this.value)">
+          <option value="new">Сначала новые</option><option value="name">По имени</option><option value="traffic">По трафику</option><option value="expiry">По сроку</option>
+        </select></label>
+      <button class="btn" onclick="openAddUserModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Добавить пользователя
+      </button>
+    </div>
+    <div id="no-inbounds-callout" class="action-banner" style="display: none; border-color: color-mix(in srgb, var(--g-accent) 40%, transparent); background: color-mix(in srgb, var(--g-accent) 7%, transparent);">
+      <div class="banner-text"><h3>Сначала создайте подключения</h3><p>Пока нет ни одного подключения, пользователям некуда подключаться. «Быстрая настройка» создаст рекомендуемый набор за один шаг: REALITY с Vision и XHTTP на втором имени.</p></div>
+      <button class="btn" onclick="quickSetup()">Быстрая настройка</button>
+    </div>
+    <div class="bulk-head" id="bulk-head">
+      <label class="bulk-all"><input type="checkbox" id="u-select-all" onchange="selectAllUsers(this.checked)"> Выбрать всех в списке</label>
+    </div>
+    <div class="bulk-bar" id="bulk-bar" hidden role="toolbar" aria-label="Действия над выбранными">
+      <span class="bulk-count">Выбрано: <b id="bulk-count">0</b></span>
+      <div class="bulk-actions">
+        <div class="u-menu-wrap">
+          <button class="btn soft" aria-haspopup="true" aria-expanded="false" onclick="toggleUserMenu(this)">Продлить ▾</button>
+          <div class="u-menu" role="menu">
+            <button role="menuitem" onclick="closeUserMenus(); bulkAction('extend', 7)">на 7 дней</button>
+            <button role="menuitem" onclick="closeUserMenus(); bulkAction('extend', 30)">на 30 дней<small>от текущего срока или от сегодня, если он вышел</small></button>
+            <button role="menuitem" onclick="closeUserMenus(); bulkAction('extend', 90)">на 90 дней</button>
+            <button role="menuitem" onclick="closeUserMenus(); bulkAction('extend', 365)">на год</button>
+          </div>
+        </div>
+        <button class="btn soft" onclick="bulkAction('disable')">Отключить</button>
+        <button class="btn soft" onclick="bulkAction('enable')">Включить</button>
+        <button class="btn soft" onclick="bulkAction('reset_traffic')">Сбросить трафик</button>
+        <button class="btn danger" onclick="bulkAction('delete')">Удалить…</button>
+      </div>
+      <button class="btn-link" onclick="clearUserSel()">Снять выбор</button>
+    </div>
+    <div class="clients-grid" id="clients-container"></div>
+  </section>
+
+  <!-- 1: Секция Дашборды -->
+  <section id="view-dashboards" style="display: flex; flex-direction: column; gap: 18px;">
+    <div class="hero" id="hero">
+      <div class="hero-main">
+        <div class="hero-ic" id="hero-ic">✓</div>
+        <div><h2 id="hero-title">Проверяю сервер…</h2><p id="hero-sub">&nbsp;</p></div>
+      </div>
+      <div class="hero-actions">
+        <button class="btn" id="hero-fix" style="display: none;" onclick="navigateTo('health', document.querySelector('[data-tab=health]'))">Разобраться</button>
+      </div>
+    </div>
+
+    <div class="wizard" id="wizard" style="display:none;">
+      <div class="wizard-head">
+        <div><h3>Первая настройка</h3><p id="wizard-sub">Четыре шага до работающего VPN</p></div>
+        <button class="wizard-skip" onclick="wizardDismiss()" title="Скрыть мастер">Скрыть</button>
+      </div>
+      <div class="wizard-bar"><div class="wizard-bar-fill" id="wizard-fill"></div></div>
+      <ol class="wizard-steps" id="wizard-steps"></ol>
+    </div>
+
+    <div class="d-tiles">
+      <div class="stat-tile d-tile"><div class="d-label">Пользователи</div><div class="d-num" id="k-users">—</div></div>
+      <div class="stat-tile d-tile"><div class="d-label">Подключения</div><div class="d-num" id="k-conn">—</div></div>
+      <div class="stat-tile d-tile"><div class="d-label">Скоро истекут</div><div class="d-num" id="k-exp">—</div></div>
+      <div class="stat-tile d-tile"><div class="d-label">Трафик всего</div><div class="d-num" id="k-traffic">—</div></div>
+    </div>
+
+    <div class="d-row">
+      <div class="chart-card">
+        <h4>Сеть сейчас <small id="metrics-age" class="metrics-age" role="status"></small></h4>
+        <div class="d-speeds">
+          <div class="d-speed"><i style="background:var(--chart-rx,#10b981)"></i><b id="lg-rx">—</b>входящий</div>
+          <div class="d-speed"><i style="background:var(--chart-tx,#f5a524)"></i><b id="lg-tx">—</b>исходящий</div>
+        </div>
+        <svg class="chart-svg" id="chart-net" role="img" aria-label="График сетевого трафика: входящий и исходящий за последнее время" viewBox="0 0 600 150" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="chart-card" id="res-card">
+        <h4>Сервер <small id="res-up">—</small></h4>
+        <div id="res-bars" class="res-bars"></div>
+      </div>
+    </div>
+
+    <div class="chart-card" id="users-traffic-card">
+      <div class="d-users-head"><h4 style="flex:1">Трафик по пользователям</h4><button class="d-more" id="top-more" type="button" aria-expanded="false" style="display:none"></button></div>
+      <div id="top-traffic"></div>
+    </div>
+  </section>
+
+  <section id="view-templates" style="display: none; flex-direction: column; gap: 18px;">
+    <div class="tabs-strip" role="tablist" aria-label="Раздел">
+      <button class="tab-btn" role="tab" data-tab="clients" onclick="navigateTo('clients', this)">Пользователи</button>
+      <button class="tab-btn" role="tab" data-tab="templates" onclick="navigateTo('templates', this)">Шаблоны</button>
+      <button class="tab-btn" role="tab" data-tab="groups" onclick="navigateTo('groups', this)">Группы</button>
+    </div>
+    <div class="toolbar">
+      <p class="sec-intro" style="flex: 1; min-width: 240px;">Шаблон – готовый набор лимитов (трафик, срок, устройства). Выбирается при создании пользователя и заполняет форму за вас.</p>
+      <button class="btn" onclick="openTemplateDrawer()">+ Добавить шаблон</button>
+    </div>
+    <div class="clients-grid" id="gt-templates"></div>
+  </section>
+
+  <section id="view-groups" style="display: none; flex-direction: column; gap: 18px;">
+    <div class="tabs-strip" role="tablist" aria-label="Раздел">
+      <button class="tab-btn" role="tab" data-tab="clients" onclick="navigateTo('clients', this)">Пользователи</button>
+      <button class="tab-btn" role="tab" data-tab="templates" onclick="navigateTo('templates', this)">Шаблоны</button>
+      <button class="tab-btn" role="tab" data-tab="groups" onclick="navigateTo('groups', this)">Группы</button>
+    </div>
+    <div class="toolbar">
+      <p class="sec-intro" style="flex: 1; min-width: 240px;">Группа решает, какие подключения видит пользователь. Без группы он получает все включённые подключения.</p>
+      <button class="btn" onclick="openGroupDrawer()">+ Добавить группу</button>
+    </div>
+    <div class="clients-grid" id="gt-groups"></div>
+  </section>
+
+  <!-- Журнал действий -->
+  <section id="view-audit" style="display: none; flex-direction: column; gap: 16px;">
+    <div class="chart-card">
+      <h4>Действия администратора и системные события <small>последние 200</small></h4>
+      <table class="mini-table">
+        <thead><tr><th>Время</th><th>Кто</th><th>Что</th><th>Подробности</th></tr></thead>
+        <tbody id="audit-table"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Здоровье системы -->
+  <section id="view-health" style="display: none; flex-direction: column; gap: 20px;">
+    <div class="settings-card" id="check-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+        Здоровье системы
+      </h3>
+      <p>Проверка служб, конфига, портов, ресурсов, сети, файрвола, безопасности, резервных копий и обновлений. Проверки запускаются только кнопками ниже. Рядом с результатом, который можно исправить, появится кнопка «Исправить».</p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn-banner" onclick="runCheck()" style="justify-content: center;">Проверить</button>
+        <button class="btn-banner" onclick="runCheck(true)" style="justify-content: center; background: var(--surface-inset); color: var(--text-main);" title="Настоящий клиент заходит на сервер через каждый протокол и открывает страницу">Проверить подключения клиентом</button>
+        <button class="btn-banner" onclick="stabilityOpen()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main);" title="Ссылка для проверки из мобильной сети: страница скачивает файл с сервера и присылает результат">Проверка стабильности соединения</button>
+      </div>
+      <div style="margin-top: 10px;"><button class="btn soft" onclick="openSupportReport()" title="Соберёт сведения о сервере для поддержки. Ключи, ссылки, адреса и домены вычищаются, ничего не отправляется само">Сформировать отчёт для поддержки</button></div>
+      <div id="stability-block" style="display: none; margin-top: 6px;">
+        <h4 style="margin: 14px 0 8px;">Проверка стабильности соединения</h4>
+        <p>Сетевое оборудование на пути может останавливать TCP-соединения до вашего хостера: данные идут несколько пакетов и прекращаются. С сервера это не видно. Откройте созданную ссылку на телефоне в мобильной сети (VPN выключен): страница скачает файл 256 КБ с вашего сервера и пришлёт результат сюда. Идея проверки: <a href="https://github.com/MarkSinD/stability-check" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">stability-check</a>.</p>
+        <div id="stability-link" style="margin-top: 12px;"></div>
+        <div id="stability-list" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+    <div id="check-result" style="display: flex; flex-direction: column; gap: 10px;"></div>
+  </section>
+
+  <!-- 2: Секция Подключения -->
+  <section id="view-inbounds" style="display: none; flex-direction: column; gap: 18px;">
+    <div class="toolbar">
+      <p class="sec-intro" style="flex: 1; min-width: 240px;">Каждое подключение – один протокол на своём порту. Пользователи получают сразу все включённые подключения одной ссылкой.</p>
+      <div class="tb-actions" id="ib-actions">
+        <div class="u-menu-wrap">
+          <button class="btn soft" aria-haspopup="true" aria-expanded="false" onclick="toggleUserMenu(this)">Наборы ▾</button>
+          <div class="u-menu" role="menu">
+            <button role="menuitem" onclick="closeUserMenus(); quickSetup()">Рекомендуемый набор<small>REALITY с Vision и XHTTP</small></button>
+            <button role="menuitem" onclick="closeUserMenus(); quickSetup('all')">Все доступные протоколы<small>каждый порт увеличивает поверхность сервера</small></button>
+          </div>
+        </div>
+        <button class="btn" onclick="openInboundModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Добавить подключение
+        </button>
+      </div>
+    </div>
+    <div class="clients-grid" id="inbounds-container"></div>
+  </section>
+
+  <!-- Каскад: вход через узел в другой сети -->
+  <section id="view-cascade" style="display: none; flex-direction: column; gap: 18px;">
+    <div class="settings-card" id="bridge-card">
+      <p>Клиент подключается к вашему узлу в другой сети (например, в другой стране), а узел пересылает соединение на этот сервер. Ключи и трафик узлу недоступны: он только пересылает порты. Мост работает, только если адрес узла доступен из сети клиента: это проверяется замером с телефона, а не предполагается. Размещение узла в другой стране и его условия (в том числе у хостера) остаются на вашей ответственности.</p>
+      <h4 style="margin: 4px 0 0;">Узлы</h4>
+      <div id="bridge-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <button class="btn-banner" onclick="bridgeAdd()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main);">+ Добавить узел</button>
+        <button class="btn-banner" id="bridge-save" onclick="bridgeSave()" style="justify-content: center;">Сохранить</button>
+        <span id="bridge-dirty" class="form-hint" role="status" style="margin: 0; display: none; color: var(--g-warn, #b8860b); font-weight: 700;">Есть несохранённые изменения</span>
+      </div>
+    </div>
+    <div class="settings-card">
+      <h4 style="margin: 0;">Что попадёт в подписку</h4>
+      <div id="bridge-preview" class="form-hint" style="margin: 0;"></div>
+    </div>
+    <div class="settings-card" id="bridge-script-card" hidden>
+      <h4 style="margin: 0;">Скрипт для узла</h4>
+      <div id="bridge-script"></div>
+    </div>
+  </section>
+
+  <!-- Генераторы конфигов для роутера (встроены в панель) -->
+  <section id="view-tools" style="display: none; flex-direction: column; gap: 18px;">
+    <div class="form-hint" style="margin: 0 4px;">Роутер Keenetic: установка XKeen (прозрачная маршрутизация через Xray) &mdash; <a href="https://github.com/jameszeroX/XKeen" style="color: inherit; text-decoration: underline;" target="_blank" rel="noopener noreferrer">официальная страница и инструкция на GitHub</a>.</div>
+    <div class="form-hint" style="margin: 0 4px;">Роутер OpenWrt: установка Nikki (прозрачная маршрутизация через Mihomo) &mdash; <a href="https://github.com/nikkinikki-org/OpenWrt-nikki" style="color: inherit; text-decoration: underline;" target="_blank" rel="noopener noreferrer">официальная страница и инструкция на GitHub</a>.</div>
+    <iframe id="tools-frame" title="Роутинг" data-src="/tools/?embed=1" style="width: 100%; height: 1400px; border: 0; border-radius: 16px; background: transparent;"></iframe>
+  </section>
+
+  <!-- 3: НОВАЯ СЕКЦИЯ — Настройки XRAY -->
+
+
+  <!-- 4: Секция Настройки системы -->
+  <section id="view-settings" style="display: none; flex-direction: column; gap: 24px;">
+      <div class="tabs-strip" id="settings-tabs" role="tablist" aria-label="Раздел настроек">
+        <button class="tab-btn" role="tab" data-sec="security" onclick="showSettingsSec('security')">Безопасность</button>
+        <button class="tab-btn" role="tab" data-sec="network" onclick="showSettingsSec('network')">Сеть и сертификаты</button>
+        <button class="tab-btn" role="tab" data-sec="sub" onclick="showSettingsSec('sub')">Подписка</button>
+        <button class="tab-btn" role="tab" data-sec="notify" onclick="showSettingsSec('notify')">Уведомления</button>
+        <button class="tab-btn" role="tab" data-sec="masking" onclick="showSettingsSec('masking')">Маскировка и порты</button>
+        <button class="tab-btn" role="tab" data-sec="cores" onclick="showSettingsSec('cores')">Ядра</button>
+        <button class="tab-btn" role="tab" data-sec="system" onclick="showSettingsSec('system')">Система</button>
+      </div>
+      <div class="settings-body">
+      <div data-sec="cores" class="cores-sec" hidden>
+    <div class="settings-card" id="cores-card">
+      <h3>Ядра и компоненты</h3>
+      <p>Каждый протокол обслуживает своё ядро. Недостающее скачивается автоматически при создании подключения; здесь можно поставить заранее. Загрузки проверяются по SHA-256.</p>
+      <div id="cores-table" style="display: flex; flex-direction: column; gap: 6px;"></div>
+      <p class="core-note">Значки ядер принадлежат авторам проектов: Project X (Xray), SagerNet (sing-box), telemt, Amnezia (AmneziaWG). Значки mtg и Mieru нарисованы для панели.</p>
+    </div>
+
+    <div id="core-stash" hidden>
+    <div class="core-pane" id="core-pane-xray" style="display: flex; flex-direction: column; gap: 18px;">
+    <div class="action-banner" style="background: linear-gradient(135deg, #1b202c 0%, #101319 100%); border-color: color-mix(in srgb, var(--g-accent) 30%, transparent);">
+      <div class="banner-text">
+        <h3>Параметры ядра Xray</h3>
+        <p id="xray-core-line">Журнал, DNS, маршрутизация, исходящие, политики и произвольный JSON. Изменения проверяются самим Xray перед применением, при ошибке остаётся прежний конфиг.</p>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn-banner" onclick="restartXrayCore()" style="background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Перезапустить</button>
+      </div>
+    </div>
+
+
+    <div class="settings-grid">
+      <div class="settings-card">
+        <h3>Журнал</h3>
+        <div class="form-group"><label>Уровень</label>
+          <select id="xs-log_level" class="form-control"><option>none</option><option>error</option><option>warning</option><option>info</option><option>debug</option></select></div>
+        <label class="check-row"><input type="checkbox" id="xs-access_log"> Писать access-лог (logs/xray-access.log)</label>
+      </div>
+
+      <div class="settings-card">
+        <h3>DNS</h3>
+        <label class="check-row"><input type="checkbox" id="xs-dns_enable"> Использовать встроенный DNS Xray</label>
+        <div class="form-group"><label>Серверы (по одному в строке: IP, https://…/dns-query, localhost)</label>
+          <textarea id="xs-dns_servers" class="form-control" rows="3"></textarea></div>
+        <div class="form-group"><label>Стратегия запросов</label>
+          <select id="xs-dns_strategy" class="form-control"><option>UseIP</option><option>UseIPv4</option><option>UseIPv6</option></select></div>
+        <label class="check-row"><input type="checkbox" id="xs-dns_disable_cache"> Отключить кэш DNS</label>
+      </div>
+
+      <div class="settings-card">
+        <h3>Маршрутизация сервера</h3>
+        <p>Что сервер делает с трафиком клиентов.</p>
+        <div class="form-group"><label>Стратегия доменов</label>
+          <select id="xs-domain_strategy" class="form-control"><option>AsIs</option><option>IPIfNonMatch</option><option>IPOnDemand</option></select></div>
+        <label class="check-row"><input type="checkbox" id="xs-block_private"> Запретить доступ к локальным сетям сервера (geoip:private)</label>
+        <label class="check-row"><input type="checkbox" id="xs-block_bittorrent"> Блокировать BitTorrent</label>
+        <label class="check-row"><input type="checkbox" id="xs-block_ads"> Блокировать рекламу (geosite:category-ads-all)</label>
+        <div class="form-group"><label>Блокировать домены (по одному в строке: geosite:…, domain:…, regexp:…)</label>
+          <textarea id="xs-block_domains" class="form-control" rows="2"></textarea></div>
+        <div class="form-group"><label>Блокировать IP (geoip:…, CIDR)</label>
+          <textarea id="xs-block_ips" class="form-control" rows="2"></textarea></div>
+        <div class="form-group"><label>Напрямую: домены</label>
+          <textarea id="xs-direct_domains" class="form-control" rows="2"></textarea></div>
+        <div class="form-group"><label>Напрямую: IP</label>
+          <textarea id="xs-direct_ips" class="form-control" rows="2"></textarea></div>
+        <div class="form-group"><label>Свои правила (JSON-массив правил Xray)</label>
+          <textarea id="xs-routing_extra" class="form-control mono" rows="3" placeholder='[{"type":"field","domain":["geosite:netflix"],"outboundTag":"direct"}]'></textarea></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Исходящие</h3>
+        <div class="form-group"><label>Стратегия разрешения доменов (freedom)</label>
+          <select id="xs-freedom_strategy" class="form-control"><option>AsIs</option><option>UseIP</option><option>UseIPv4</option><option>UseIPv6</option></select></div>
+        <label class="check-row"><input type="checkbox" id="xs-freedom_fragment"> Фрагментация TLS Hello на выходе</label>
+        <div class="form-group"><label>Дополнительные исходящие (JSON-массив: WARP, SOCKS-цепочки…)</label>
+          <textarea id="xs-outbounds_extra" class="form-control mono" rows="4"></textarea></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Политики (секунды)</h3>
+        <div class="form-row">
+        <div class="form-group"><label>Handshake</label><input type="number" id="xs-policy_handshake" class="form-control"></div>
+        <div class="form-group"><label>Простой соединения (connIdle)</label><input type="number" id="xs-policy_conn_idle" class="form-control"></div>
+        <div class="form-group"><label>uplinkOnly</label><input type="number" id="xs-policy_uplink_only" class="form-control"></div>
+        <div class="form-group"><label>downlinkOnly</label><input type="number" id="xs-policy_downlink_only" class="form-control"></div>
+        <div class="form-group"><label>Буфер, КБ</label><input type="number" id="xs-policy_buffer_size" class="form-control"></div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Свой JSON</h3>
+        <p>Объект, который вливается в готовый config.json поверх всех настроек.</p>
+        <textarea id="xs-raw_patch" class="form-control mono" rows="9" placeholder='{"policy":{"levels":{"0":{"bufferSize":4}}}}'></textarea>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button class="btn-banner" onclick="saveXraySettings()" style="justify-content: center;">Сохранить и применить</button>
+      <button class="btn-banner" onclick="toggleConfigPreview()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Показать итоговый config.json</button>
+    </div>
+    <pre id="xray-config-preview" class="mono" style="display: none; background: var(--surface-card); border-radius: var(--radius-card); padding: 18px; font-size: 12px; overflow: auto; max-height: 480px;"></pre>
+    </div>
+    </div>
+      </div>
+
+
+      <div data-sec="security" class="settings-card">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Безопасность
+        </h3>
+        <p>Смените пароль администратора для защиты системы.</p>
+        <div class="form-group">
+          <label>Текущий пароль</label>
+          <input type="password" id="settings-old-pwd" class="form-control" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Новый пароль</label>
+          <input type="password" id="settings-new-pwd" class="form-control" placeholder="Не менее 8 символов">
+        </div>
+        <button class="btn-banner" onclick="submitChangePassword()" style="justify-content: center; margin-top: 4px;">
+          Обновить пароль
+        </button>
+      </div>
+
+    <div data-sec="security" class="settings-card" id="totp-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>
+        Двухфакторный вход
+      </h3>
+      <p id="totp-state">Вход по паролю и одноразовому коду из приложения (Google Authenticator, Aegis, 2FAS…). Даже если пароль утечёт, зайти без телефона не получится.</p>
+      <div id="totp-setup" style="display: none; flex-direction: column; align-items: center; gap: 10px;">
+        <div style="padding: 12px; background: #fff; border-radius: 14px;" id="totp-qr"></div>
+        <code id="totp-secret" style="font-size: 12px; word-break: break-all;"></code>
+        <div class="form-group" style="width: 100%;"><label>Код из приложения</label><input type="text" id="totp-code" class="form-control" inputmode="numeric" maxlength="7" placeholder="123456"></div>
+        <button class="btn-banner" onclick="enableTOTP()" style="justify-content: center;">Подтвердить и включить</button>
+      </div>
+      <div id="totp-off" style="display: none; flex-direction: column; gap: 10px;">
+        <div class="form-group"><label>Пароль</label><input type="password" id="totp-pass" class="form-control"></div>
+        <div class="form-group"><label>Код из приложения</label><input type="text" id="totp-code2" class="form-control" inputmode="numeric" maxlength="7"></div>
+        <button class="btn-banner" onclick="disableTOTP()" style="justify-content: center; background: var(--accent-rose-bg); color: var(--accent-rose); box-shadow: none;">Выключить</button>
+      </div>
+      <button class="btn-banner" id="totp-start" onclick="startTOTP()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Включить двухфакторный вход</button>
+    </div>
+
+    <div data-sec="network" class="settings-card" id="https-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        HTTPS панели
+      </h3>
+      <p>Без HTTPS пароль и сессия идут по сети открытым текстом. С доменом панель получит бесплатный сертификат Let's Encrypt (нужен открытый порт 80 и домен, который смотрит на этот сервер).</p>
+      <div class="form-group"><label>Режим</label>
+        <select id="tls-mode" class="form-control" onchange="renderTLSMode()">
+          <option value="off">Выключено (только HTTP)</option>
+          <option value="acme">Let's Encrypt (по домену)</option>
+          <option value="acme-ip">Let's Encrypt на IP-адрес (6 суток, обновляется само)</option>
+          <option value="self">Самоподписанный сертификат (браузер предупредит)</option>
+          <option value="custom">Свои файлы сертификата</option>
+        </select></div>
+      <div id="tls-acme" style="display: none; flex-direction: column; gap: 12px;">
+        <div class="form-group"><label>Домен панели</label><input type="text" id="tls-domain" class="form-control" placeholder="panel.example.com"></div>
+        <div class="form-group"><label>Почта для Let's Encrypt (необязательно)</label><input type="text" id="tls-email" class="form-control" placeholder="you@example.com"></div>
+      </div>
+      <div id="tls-custom" style="display: none; flex-direction: column; gap: 12px;">
+        <div class="form-group"><label>Файл сертификата (fullchain.pem)</label><input type="text" id="tls-cert" class="form-control"></div>
+        <div class="form-group"><label>Файл ключа (privkey.pem)</label><input type="text" id="tls-key" class="form-control"></div>
+      </div>
+      <div id="tls-common" style="display: none; flex-direction: column; gap: 12px;">
+        <div class="form-group"><label>Порт HTTPS</label><input type="number" id="tls-port" class="form-control" value="8443"></div>
+        <label class="check-row"><input type="checkbox" id="tls-redirect" checked> Перенаправлять обычный HTTP на HTTPS (подписки остаются доступными и по HTTP)</label>
+      </div>
+      <button class="btn-banner" onclick="savePanelTLS()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Применить</button>
+    </div>
+
+    <div data-sec="network" class="settings-card" id="server-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg>
+        Адрес сервера
+      </h3>
+      <p>IP или домен, который попадает в ссылки и подписки клиентов и в самоподписанный сертификат. Пусто – берётся адрес, по которому открыта панель.</p>
+      <div class="form-group"><label>Публичный адрес</label><input type="text" id="srv-host" class="form-control" placeholder="например 203.0.113.10 или vpn.example.com"></div>
+      <button class="btn-banner" onclick="saveServerHost()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Сохранить адрес</button>
+    </div>
+
+    <div data-sec="masking" class="settings-card" id="masking-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        Маскировка
+      </h3>
+      <p>REALITY выдаёт сервер за чужой сайт. Панель сама ищет подходящие сайты среди соседей по подсети сервера (нужны TLS 1.3 и HTTP/2). Прежний сайт ещё неделю принимается сервером, пока клиенты обновят подписку.</p>
+      <div id="mk-current" style="font-size: 13px; color: var(--text-secondary);"></div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn-banner" onclick="scanMasking()" style="justify-content: center;">Подобрать сайт автоматически</button>
+        <button class="btn-banner" onclick="setMaskingSNI('', true)" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Случайный из списка</button>
+      </div>
+      <div id="mk-candidates" style="display: flex; flex-direction: column; gap: 6px;"></div>
+      <div class="form-group"><label>Свой сайт (домен)</label>
+        <div class="copy-row"><input type="text" id="mk-custom" class="form-control" placeholder="www.example.com"><button class="btn-icon" style="width: auto; padding: 0 14px;" onclick="setMaskingSNI(document.getElementById('mk-custom').value, false)">Применить</button></div></div>
+      <div class="form-group"><label>Сайт на своём домене (заглушка и сертификат Let's Encrypt)</label>
+        <p class="form-hint" style="margin: 0 0 8px;">Если домен смотрит на этот сервер, панель выпустит сертификат, поднимет страницу-заглушку и переключит на неё REALITY: чужой запрос получит ваш сайт, а не чужой. Нужна A-запись домена на этот сервер и свободный порт 80.</p>
+        <div id="mk-self-state" class="form-hint" style="margin: 0 0 8px;"></div>
+        <div class="copy-row"><input type="text" id="mk-self" class="form-control" placeholder="vpn.example.com"><button class="btn-icon" id="mk-self-on" style="width: auto; padding: 0 14px;" onclick="enableSelfSteal()">Включить</button><button class="btn-icon" id="mk-self-off" style="width: auto; padding: 0 14px; display: none;" onclick="disableSelfSteal()">Выключить</button></div></div>
+      <div class="form-group"><label>Страница-заглушка (ответ постороннему, например по HTTP/3 у Hysteria2)</label>
+        <select id="mk-stub" class="form-control" onchange="setStub(this.value)"></select>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+          <button class="btn-banner" onclick="randomStub()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Другая случайная</button>
+          <button class="btn-banner" onclick="previewCurrentStub()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Посмотреть текущую</button>
+        </div></div>
+      <details id="mk-custom-box">
+        <summary style="cursor: pointer; font-weight: 700; font-size: 13px; padding: 4px 0;">Своя страница-заглушка</summary>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+          <p class="form-hint">Одна HTML-страница: стили и картинки внутри файла (CSS в &lt;style&gt;, картинки как data:). До 256 КБ. Её видит каждый, кто зайдёт на сервер по домену или по HTTP/3, поэтому не кладите туда ничего личного.</p>
+          <div class="form-group"><label>HTML страницы</label><textarea id="mk-html" class="form-control mono" rows="9" spellcheck="false" placeholder="&lt;!doctype html&gt;&#10;&lt;html&gt;…"></textarea></div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <label class="btn-banner" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none; cursor: pointer;">Загрузить файл .html<input type="file" id="mk-file" accept=".html,.htm,text/html" style="display: none;" onchange="loadStubFile(this)"></label>
+            <button class="btn-banner" onclick="previewStub()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Посмотреть</button>
+            <button class="btn-banner" onclick="saveCustomStub()" style="justify-content: center;">Сохранить и применить</button>
+            <button class="btn-banner" id="mk-del" onclick="deleteCustomStub()" style="justify-content: center; background: var(--accent-rose-bg); color: var(--accent-rose); box-shadow: none; display: none;">Удалить свою</button>
+          </div>
+          <iframe id="mk-preview" sandbox title="Предпросмотр заглушки" style="display: none; width: 100%; height: 320px; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; background: #fff;"></iframe>
+        </div>
+      </details>
+    </div>
+
+    <div data-sec="masking" class="settings-card" id="portmode-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="6" rx="2"/><rect x="2" y="15" width="20" height="6" rx="2"/><path d="M12 9v6"/></svg>
+        Порты
+      </h3>
+      <p>«Каждый протокол на своём порту» – по умолчанию. «Всё на 443» – панель занимает порт 443 и направляет трафик по имени сайта (SNI): REALITY, XHTTP, MTProto, а также WS/gRPC/VMess с собственным доменом. Остальные (UDP и протоколы без отдельного имени) остаются на своих портах.</p>
+      <div class="form-group"><label>Режим</label>
+        <select id="pm-mode" class="form-control"><option value="separate">Каждый протокол на своём порту</option><option value="single443">Всё на 443 по SNI</option></select></div>
+      <button class="btn-banner" onclick="savePortMode()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Применить режим</button>
+    </div>
+
+    <div data-sec="sub" class="settings-card" id="subset-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        Оформление подписки
+      </h3>
+      <p>Как подписка выглядит в приложении: название, объявление, кнопка поддержки. Расширенные возможности (кнопка «Продлить», информационный блок) нужны Happ и требуют Provider ID.</p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group"><label>Название (до 25 символов)</label><input type="text" id="ss-title" class="form-control"></div>
+        <div class="form-group"><label>Обновлять каждые, часов</label><input type="number" id="ss-hours" class="form-control" min="1" max="168"></div>
+      </div>
+      <div class="form-group"><label>Объявление в приложении (до 200 символов)</label><input type="text" id="ss-announce" class="form-control"></div>
+      <div class="form-stack">
+      <div class="form-row">
+        <div class="form-group"><label>Ссылка на поддержку</label><input type="text" id="ss-support" class="form-control" placeholder="https://t.me/…"></div>
+        <div class="form-group"><label>Страница сервиса</label><input type="text" id="ss-web" class="form-control" placeholder="https://…"></div>
+      </div>
+      <label class="check-row"><input type="checkbox" id="ss-happrt"> Передавать Happ правила раздельной маршрутизации</label>
+        <div class="form-group"><label>Provider ID (Happ)</label><input type="text" id="ss-provider" class="form-control"></div>
+        <label class="check-row"><input type="checkbox" id="ss-expire"> Напоминать об окончании срока (3 дня до и после)</label>
+        <div class="form-group"><label>Ссылка кнопки «Продлить»</label><input type="text" id="ss-expire-link" class="form-control"></div>
+        <div class="form-group"><label>Информационный блок (текст)</label><input type="text" id="ss-info" class="form-control"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+          <div class="form-group"><label>Цвет блока</label><select id="ss-color" class="form-control"><option value="blue">синий</option><option value="green">зелёный</option><option value="red">красный</option></select></div>
+          <div class="form-group"><label>Текст кнопки</label><input type="text" id="ss-btn" class="form-control"></div>
+          <div class="form-group"><label>Ссылка кнопки</label><input type="text" id="ss-btn-link" class="form-control"></div>
+        </div>
+        <label class="check-row"><input type="checkbox" id="ss-hide"> Скрыть настройки подписки в Happ</label>
+      </div>
+      <button class="btn-banner" onclick="saveSubSettings()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Сохранить</button>
+    </div>
+
+    <div data-sec="notify" class="settings-card" id="telegram-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Уведомления в Telegram
+      </h3>
+      <p>Панель напишет вам, когда упало ядро, у пользователя закончился лимит или срок, кто-то превысил число устройств или вышла новая версия. Бота создайте у @BotFather, ID чата узнайте у @userinfobot.</p>
+      <label class="check-row"><input type="checkbox" id="tg-enabled"> Присылать уведомления</label>
+      <div class="form-group"><label>Токен бота <span id="tg-token-state" style="color: var(--text-muted)"></span></label><input type="password" id="tg-token" class="form-control" placeholder="123456:ABC… (оставьте пустым, чтобы не менять)" autocomplete="off"></div>
+      <div class="form-group"><label>ID чата</label><input type="text" id="tg-chat" class="form-control" placeholder="например 123456789"></div>
+      <label class="check-row"><input type="checkbox" id="tg-bot" onchange="tgBotToggle()"> Управление сервером через бота</label>
+      <div id="tg-bot-box">
+        <div class="form-group"><label>ID администраторов (через запятую)</label><input type="text" id="tg-admins" class="form-control" placeholder="например 123456789" inputmode="numeric" autocomplete="off">
+          <div class="form-hint">Свой ID покажет бот @userinfobot. Бот отвечает только им и только в личной переписке: статус, список пользователей, ссылка и QR, создание, продление, пауза. Команды: /help. Один токен одновременно может опрашивать только одна программа: на втором сервере или в тестовой копии панели возьмите другого бота.</div></div>
+      </div>
+      <div id="tg-events" style="display: flex; flex-direction: column; gap: 6px;"></div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn-banner" onclick="saveTelegram()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Сохранить</button>
+        <button class="btn-banner" onclick="testTelegram()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Отправить проверочное</button>
+      </div>
+    </div>
+
+    <div data-sec="system" class="settings-card" id="update-card">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        Обновление панели
+      </h3>
+      <p id="update-status">Текущая версия: —</p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn-banner" onclick="checkUpdate()" style="justify-content: center;">Проверить обновления</button>
+        <button class="btn-banner" id="update-apply-btn" onclick="applyUpdate()" style="display: none; justify-content: center; background: var(--accent-green); box-shadow: none;">Обновить сейчас</button>
+      </div>
+      <p style="font-size: 12px;">Обновления приходят из официального репозитория Kitsune. Перед установкой автоматически делается копия базы, проверяются контрольная сумма и подпись релиза. Прежний бинарник остаётся рядом как <code>.old</code> для отката.</p>
+    </div>
+
+      <div data-sec="system" class="settings-card">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Резервное копирование
+        </h3>
+        <p>Копия содержит пользователей, подключения, ключи и сертификат. Её можно развернуть на новом сервере (даже с другим IP): нужные ядра скачаются сами. Копия содержит секреты: храните её как секрет.</p>
+        <div class="form-group">
+          <label>Пароль копии (необязательно)</label>
+          <input type="password" id="backup-pass" class="form-control" autocomplete="new-password" placeholder="Не меньше 8 символов; без пароля копия не шифруется">
+          <p style="font-size: 12px;">С паролем файл шифруется (AES-256), без пароля его откроет любой, у кого он окажется. Пароль не восстановить: потеряете его, потеряете копию.</p>
+        </div>
+        <button class="btn-banner" onclick="downloadBackup()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">
+          Скачать копию
+        </button>
+        <div class="form-group">
+          <label>Восстановить из копии</label>
+          <input type="file" id="restore-file" class="form-control" accept=".gz,.tgz,.enc,application/gzip,application/octet-stream">
+        </div>
+        <div class="form-group">
+          <label>Пароль копии (если она защищена)</label>
+          <input type="password" id="restore-pass" class="form-control" autocomplete="off">
+        </div>
+        <button class="btn-banner" onclick="restoreBackup()" style="justify-content: center; background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Восстановить</button>
+
+        <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; margin-top: 4px;">
+          <button class="btn-banner" onclick="restartXrayCore()" style="width: 100%; justify-content: center; background: var(--surface-inset); color: var(--text-main);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            Перезапустить все ядра
+          </button>
+        </div>
+      </div>
+
+    <div data-sec="system" class="settings-card" id="import-card">
+      <h3>Импорт config.json Xray</h3>
+      <p>Импортирует поддерживаемые подключения из config.json Xray. Сначала выполните пробный прогон.</p>
+      <div class="form-group">
+        <label for="imp-file">Файл config.json Xray</label>
+        <input type="file" id="imp-file" class="form-control" onchange="impReset()">
+      </div>
+      <div class="form-group">
+        <label>Если подключение уже есть</label>
+        <select id="imp-mode" class="form-control" onchange="impReset()"><option value="skip">Пропустить</option><option value="update">Обновить подключение</option></select>
+      </div>
+      <div id="imp-warn"></div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn-banner" id="imp-preview" onclick="importPreview()" style="justify-content: center;">Пробный прогон</button>
+        <button class="btn-banner" id="imp-run" onclick="importRun()" style="display: none; justify-content: center; background: var(--accent-green); box-shadow: none;">Импортировать</button>
+      </div>
+      <div id="imp-report"></div>
+    </div>
+
+    <div data-sec="system" class="settings-card">
+      <h3 style="font-size: 14px;">Kitsune</h3>
+      <p style="margin-top: 2px;">Веб-панель для VPN- и прокси-сервера: протоколы, пользователи и подписки в одном окне. Версия <strong id="settings-version">—</strong></p>
+    </div>
+
+      </div>
+  </section>
+
+<div id="report-modal" class="modal-overlay">
+  <div class="modal-card" style="max-width: 640px; width: 100%;">
+    <h3 style="font-size: 20px; font-weight: 800;">Отчёт для поддержки</h3>
+    <p style="color: var(--text-secondary); font-size: 13px; margin: 6px 0 10px;">Ключи, ссылки, адреса, домены и пути вычищены. Прочитайте текст перед тем, как кем-то делиться: панель ничего не отправляет сама.</p>
+    <textarea id="report-text" class="form-control" readonly aria-label="Текст отчёта" style="width: 100%; height: 320px; font-family: var(--font-mono, monospace); font-size: 12px; resize: vertical;"></textarea>
+    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap;">
+      <button class="btn soft" onclick="copyReport()">Скопировать</button>
+      <button class="btn soft" onclick="downloadReport()">Скачать .txt</button>
+      <button class="btn" onclick="closeModal('report-modal')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div id="add-client-modal" class="modal-overlay">
+  <div class="modal-card">
+    <h3 style="font-size: 20px; font-weight: 800;">Новый пользователь</h3>
+    <div class="form-group">
+      <label>Шаблон</label>
+      <select id="nu-template" class="form-control" onchange="applyTemplate()"></select>
+    </div>
+    <div class="form-group">
+      <label>Имя</label>
+      <input type="text" id="nu-name" class="form-control" placeholder="например: anna (пусто – случайное)">
+      <span class="form-hint">Имя видно только вам. Пользователю достаточно отправить ссылку подписки.</span>
+    </div>
+    <div class="form-group">
+      <label>Тариф</label>
+      <div class="preset-row" id="nu-presets">
+        <button type="button" class="preset" data-gb="0" data-days="0">Без ограничений<small>трафик и срок</small></button>
+        <button type="button" class="preset" data-gb="100" data-days="30">Месяц<small>100 ГБ · 30 дней</small></button>
+        <button type="button" class="preset" data-gb="10" data-days="3">Пробный<small>10 ГБ · 3 дня</small></button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Лимит трафика</label>
+      <select id="nu-limit" class="form-control">
+        <option value="0">Без ограничений</option>
+        <option value="10">10 ГБ</option><option value="15">15 ГБ</option><option value="30">30 ГБ</option><option value="50">50 ГБ</option>
+        <option value="100">100 ГБ</option><option value="300">300 ГБ</option><option value="1000">1 ТБ</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Срок действия</label>
+      <select id="nu-expiry" class="form-control">
+        <option value="0">Бессрочно</option><option value="3">3 дня</option><option value="7">7 дней</option>
+        <option value="30" selected>30 дней (1 месяц)</option><option value="90">90 дней</option><option value="365">1 год</option>
+      </select>
+    </div>
+    <div class="form-stack">
+      <div class="form-group">
+        <label>Лимит устройств (0 – без лимита)</label>
+        <input type="number" id="nu-iplimit" class="form-control" value="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>Группа доступа</label>
+        <select id="nu-group" class="form-control"></select>
+      </div>
+      <label class="check-row"><input type="checkbox" id="nu-vision" checked> Vision (flow xtls-rprx-vision) для VLESS REALITY</label>
+      <div class="form-group">
+        <label>Заметка</label>
+        <input type="text" id="nu-note" class="form-control">
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <button class="btn-banner" onclick="submitCreateUser()" style="flex: 1; justify-content: center;">Создать</button>
+      <button class="btn-banner" onclick="closeModal('add-client-modal')" style="background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div id="edit-user-modal" class="modal-overlay">
+  <div class="modal-card">
+    <h3 style="font-size: 20px; font-weight: 800;">Пользователь <span id="eu-title"></span></h3>
+    <div class="form-group"><label>Имя</label><input type="text" id="eu-name" class="form-control"></div>
+    <div class="form-group"><label>Лимит трафика, ГБ (0 – без лимита)</label><input type="number" id="eu-limit" class="form-control" min="0" step="1"></div>
+    <div class="form-group"><label>Осталось дней (0 – бессрочно)</label><input type="number" id="eu-days" class="form-control" min="0"></div>
+    <div class="form-stack">
+      <div class="form-group"><label>Лимит устройств (0 – без лимита)</label><input type="number" id="eu-iplimit" class="form-control" min="0"></div>
+      <div class="form-group">
+        <label>Группа доступа</label>
+        <select id="eu-group" class="form-control"></select>
+      </div>
+      <label class="check-row"><input type="checkbox" id="eu-vision"> Vision для VLESS REALITY</label>
+      <div class="form-group"><label>Заметка</label><input type="text" id="eu-note" class="form-control"></div>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <button class="btn-banner" onclick="submitEditUser()" style="flex: 1; justify-content: center;">Сохранить</button>
+      <button class="btn-banner" onclick="closeModal('edit-user-modal')" style="background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Отмена</button>
+    </div>
+  </div>
+</div>
+<div id="group-modal" class="modal-overlay">
+  <div class="modal-card">
+    <h3>Группа доступа</h3>
+    <div class="form-group"><label>Название</label><input type="text" id="gp-name" class="form-control" placeholder="например: Семья – только REALITY"></div>
+    <div class="form-group"><label>Какие подключения видит пользователь</label>
+      <div id="gp-inbounds" style="display: flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-banner" onclick="saveGroup()">Сохранить</button>
+      <button class="btn-banner" onclick="closeModal('group-modal')" style="background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div id="template-modal" class="modal-overlay">
+  <div class="modal-card">
+    <h3>Шаблон пользователя</h3>
+    <div class="form-group"><label>Название</label><input type="text" id="tp-name" class="form-control" placeholder="например: Месяц, 100 ГБ"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Трафик, ГБ (0 – без лимита)</label><input type="number" id="tp-gb" class="form-control" value="0" min="0"></div>
+      <div class="form-group"><label>Срок, дней (0 – бессрочно)</label><input type="number" id="tp-days" class="form-control" value="30" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Устройств (0 – без лимита)</label><input type="number" id="tp-ip" class="form-control" value="0" min="0"></div>
+      <div class="form-group"><label>Группа доступа</label><select id="tp-group" class="form-control"></select></div>
+    </div>
+    <div class="form-group"><label>Заметка</label><input type="text" id="tp-note" class="form-control"></div>
+    <label class="check-row"><input type="checkbox" id="tp-vision" checked> Vision (flow xtls-rprx-vision) для VLESS REALITY</label>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-banner" onclick="saveTemplate()">Сохранить</button>
+      <button class="btn-banner" onclick="closeModal('template-modal')" style="background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div id="qr-modal" class="modal-overlay">
+  <div class="modal-card">
+    <h3 id="qr-modal-title">Подключение</h3>
+    <div class="form-group">
+      <label>Ссылка подписки</label>
+      <div class="copy-row"><input type="text" id="ul-sub" class="form-control mono" readonly><button class="btn-icon" title="Копировать" onclick="copyText(document.getElementById('ul-sub').value)">⧉</button></div>
+      <span class="form-hint">Отправьте её пользователю: в приложении все подключения появятся сами. Если открыть ссылку в браузере, будет страница с QR-кодом и кнопками. Ссылка даёт доступ к подключению: не публикуйте её.</span>
+    </div>
+    <div style="text-align: center;">
+      <div style="display: inline-block; padding: 14px; background: #fff; border-radius: 18px;" id="qrcode"></div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;" id="ul-qr-caption">QR подписки</div>
+    </div>
+    <div class="form-group">
+      <label>Добавить в приложение одним нажатием</label>
+      <div class="app-grid" id="app-grid"></div>
+    </div>
+    <div class="form-group">
+      <label>Отдельные подключения</label>
+      <div id="ul-links" style="display: flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+    <div class="form-group" id="ul-devices-box" style="display: none;">
+      <label>Устройства (HWID)</label>
+      <div id="ul-devices" style="display: flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-banner" onclick="closeModal('qr-modal')" style="background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Закрыть</button>
+    </div>
+  </div>
+</div>
+<div id="add-inbound-modal" class="modal-overlay">
+  <div class="modal-card" style="max-width: 620px; width: 100%; max-height: 92vh; overflow-y: auto;">
+    <h3 id="ib-modal-title" style="font-size: 20px; font-weight: 800;">Новое подключение</h3>
+    <div class="form-group" id="ib-kind-row">
+      <label>Протокол</label>
+      <select id="ib-kind" class="form-control" onchange="renderInboundFields()"></select>
+      <p id="ib-kind-desc" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;"></p>
+    </div>
+    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px;">
+      <div class="form-group"><label>Название</label><input type="text" id="ib-tag" class="form-control" placeholder="по умолчанию – по протоколу"></div>
+      <div class="form-group"><label>Порт</label><input type="number" id="ib-port" class="form-control" placeholder="авто"></div>
+    </div>
+    <div id="ib-fields" style="display: flex; flex-direction: column; gap: 12px;"></div>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <button class="btn-banner" onclick="submitInbound()" style="flex: 1; justify-content: center;">Сохранить</button>
+      <button class="btn-banner" onclick="closeModal('add-inbound-modal')" style="background: var(--surface-inset); color: var(--text-main); box-shadow: none;">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/select.js"></script>
+<script src="/static/js/core.js"></script>
+<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/wizard.js"></script>
+<script src="/static/js/gtop.js"></script>
+<script src="/static/js/stability.js"></script>
+<script src="/static/js/health.js"></script>
+<script src="/static/js/users.js"></script>
+<script src="/static/js/inbounds.js"></script>
+<script src="/static/js/groups.js"></script>
+<script src="/static/js/events.js"></script>
+<script src="/static/js/xray.js"></script>
+<script src="/static/js/settings.js"></script>
+<script src="/static/js/import.js"></script>
+<script src="/static/js/main.js"></script>
+<script src="/static/js/a11y.js"></script>
+<script src="/static/js/i18n-en.js"></script>
+<script src="/static/js/i18n.js"></script>
+</body>
+</html>

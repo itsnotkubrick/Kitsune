@@ -1,0 +1,215 @@
+#!/bin/bash
+# Kitsune bridge v2: dedicated IPv4 bridge, nftables backend.
+# Install/update: bash this-file; uninstall: bash this-file remove
+# No application keys, subscriptions or user passwords are installed here.
+set -Eeuo pipefail
+umask 077
+EXIT_IP='@@EXIT@@'
+PORTS='@@PORTS@@'
+STATE=/var/lib/kitsune-bridge
+APPLY=/usr/local/sbin/kitsune-bridge-apply
+UNIT=/etc/systemd/system/kitsune-bridge.service
+TABLE=kitsune_bridge
+[[ $(id -u) == 0 ]] || { echo 'Run as root' >&2; exit 1; }
+for cmd in nft ip sysctl systemctl flock ss awk python3 stat install mktemp; do
+  command -v "$cmd" >/dev/null || { echo "Missing dependency: $cmd (Ubuntu: apt install nftables iproute2 util-linux python3)" >&2; exit 1; }
+done
+[[ ! -L "$STATE" && ! -L "$APPLY" && ! -L "$UNIT" ]] || { echo 'Unsafe symlink' >&2; exit 1; }
+# Errors must not be interpreted as an empty firewall.
+RULESET=$(nft -j list ruleset)
+if [[ ${1:-install} != remove && ${1:-install} != stop ]]; then
+python3 -c '
+import json,sys
+for item in json.load(sys.stdin).get("nftables",[]):
+ c=item.get("chain",{})
+ if c.get("hook")=="forward" and not(c.get("family")=="ip" and c.get("table")=="kitsune_bridge"):
+  sys.exit("Foreign FORWARD chain detected. Use a dedicated bridge; no changes made.")
+' <<< "$RULESET"
+fi
+exists=0
+if nft list table ip "$TABLE" >/dev/null 2>&1; then exists=1; fi
+if [[ -e "$STATE" ]]; then
+  [[ $(stat -c '%u:%a' "$STATE") == 0:700 && -f "$STATE/owner-v2" && ! -L "$STATE/owner-v2" ]] || { echo 'Unowned state directory' >&2; exit 1; }
+  [[ $(cat "$STATE/owner-v2") == kitsune-nft-v2 ]] || { echo 'Unrecognized owner' >&2; exit 1; }
+else
+  [[ $exists == 0 && ! -e "$APPLY" && ! -e "$UNIT" ]] || { echo 'Existing objects require explicit review' >&2; exit 1; }
+  [[ $(sysctl -n net.ipv4.ip_forward) == 0 ]] || { echo 'IP forwarding already enabled; this is not a fresh dedicated bridge' >&2; exit 1; }
+  mkdir -m 700 "$STATE"
+  printf 'kitsune-nft-v2\n' > "$STATE/owner-v2"
+  printf '0\n' > "$STATE/forward.before"
+fi
+if [[ ${1:-install} != start ]]; then
+  exec 8>"$STATE/install-lock"
+  flock -w 30 8 || { echo 'Another installation is running' >&2; exit 1; }
+fi
+exec 9>"$STATE/lock"
+flock -w 30 9 || { echo 'Another bridge operation is running' >&2; exit 1; }
+OP=$(mktemp -d "$STATE/op.XXXXXXXX")
+trap 'rm -rf "$OP"' EXIT
+RULESET=$(nft -j list ruleset)
+exists=$(python3 -c '
+import json,sys
+items=json.load(sys.stdin).get("nftables",[])
+print(int(any(x.get("table",{}).get("family")=="ip" and x.get("table",{}).get("name")=="kitsune_bridge" for x in items)))
+' <<< "$RULESET")
+if [[ $exists == 1 ]]; then
+  nft list table ip "$TABLE" > "$OP/old.nft"
+  nft -j list table ip "$TABLE" | python3 -c '
+import json,sys
+items=json.load(sys.stdin).get("nftables",[])
+if not any(x.get("table",{}).get("comment")=="Kitsune bridge v2" for x in items):
+ sys.exit("Table is not owned by Kitsune")
+'
+fi
+if [[ ${1:-install} == remove || ${1:-install} == stop ]]; then
+  foreign_forward=$(python3 -c '
+import json,sys
+items=json.load(sys.stdin).get("nftables",[])
+print(int(any(x.get("chain",{}).get("hook")=="forward" and not(x["chain"].get("family")=="ip" and x["chain"].get("table")=="kitsune_bridge") for x in items)))
+' <<< "$RULESET")
+  # On our dedicated node restore the original disabled forwarding BEFORE
+  # removing its guard table. Leave shared forwarding to its new owner otherwise.
+  disabled=0
+  if [[ -f "$STATE/forward.before" && $(cat "$STATE/forward.before") == 0 && $foreign_forward == 0 ]]; then
+    sysctl -qw net.ipv4.ip_forward=0
+    disabled=1
+  fi
+  if [[ $exists == 1 ]] && ! nft delete table ip "$TABLE"; then
+    [[ $disabled == 0 ]] || sysctl -qw net.ipv4.ip_forward=1
+    exit 1
+  fi
+  if [[ ${1:-install} == stop ]]; then echo 'Bridge rules stopped'; exit 0; fi
+  flock -u 9
+  systemctl disable --now kitsune-bridge.service
+  flock -w 30 9
+  rm -f "$APPLY" "$UNIT" "$STATE/current.nft"
+  systemctl daemon-reload
+  echo 'Bridge removed. Original forwarding restored when exclusively owned; shared forwarding left unchanged. No other tables deleted.'
+  exit 0
+fi
+[[ ${1:-install} == install || ${1:-install} == start ]] || { echo 'Usage: bash this-file [install|start|remove]' >&2; exit 1; }
+if [[ ${1:-install} == start && -f "$STATE/pending" ]]; then
+  if flock -n "$STATE/install-lock" true; then
+    # Installer died/rebooted: do not mistake a stale marker for an active apply.
+    rm -f "$STATE/pending"
+  else
+    [[ $exists == 1 ]] || { echo 'Pending installation has no table' >&2; exit 1; }
+    exit 0
+  fi
+fi
+route=$(ip -4 route get "$EXIT_IP")
+IFACE=$(awk '{for(i=1;i<NF;i++)if($i=="dev"){print $(i+1);exit}}' <<< "$route")
+LOCAL_IP=$(awk '{for(i=1;i<NF;i++)if($i=="src"){print $(i+1);exit}}' <<< "$route")
+[[ $IFACE =~ ^[a-zA-Z0-9_.:-]+$ && $LOCAL_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ && $LOCAL_IP != "$EXIT_IP" ]] || { echo 'Cannot determine distinct local IPv4/interface' >&2; exit 1; }
+for pair in $PORTS; do
+  proto=${pair%:*}; port=${pair#*:}
+  sockets=$(ss -H -ln"${proto:0:1}" "sport = :$port")
+  [[ -z $sockets ]] || { echo "Local listener conflicts with $pair; no rules changed" >&2; exit 1; }
+done
+# Delete+create is ONE nft transaction. No global flush or foreign tables.
+{
+  [[ $exists == 0 ]] || echo "delete table ip $TABLE"
+  echo "table ip $TABLE {"
+  echo 'comment "Kitsune bridge v2";'
+  echo 'chain prerouting { type nat hook prerouting priority dstnat; policy accept;'
+  for pair in $PORTS; do
+    proto=${pair%:*}; port=${pair#*:}
+    echo "iifname \"$IFACE\" ip daddr $LOCAL_IP $proto dport $port counter dnat to $EXIT_IP:$port"
+  done
+  echo '}'
+  echo 'chain postrouting { type nat hook postrouting priority srcnat; policy accept;'
+  for pair in $PORTS; do
+    proto=${pair%:*}; port=${pair#*:}
+    echo "ip daddr $EXIT_IP $proto dport $port ct direction original ct status dnat ct original ip daddr $LOCAL_IP ct original proto-dst $port counter masquerade"
+  done
+  echo '}'
+  # Dedicated host: deny unrelated transit, without changing iptables policies.
+  echo 'chain forward { type filter hook forward priority filter; policy drop;'
+  for pair in $PORTS; do
+    proto=${pair%:*}; port=${pair#*:}
+    echo "iifname \"$IFACE\" ip daddr $EXIT_IP $proto dport $port ct direction original ct status dnat ct original ip daddr $LOCAL_IP ct original proto-dst $port counter accept"
+    echo "oifname \"$IFACE\" ip saddr $EXIT_IP $proto sport $port ct direction reply ct state established,related ct original ip daddr $LOCAL_IP ct original proto-dst $port counter accept"
+    echo "meta l4proto icmp ct state related ct status dnat ct original ip daddr $LOCAL_IP ct original proto-dst $port counter accept"
+  done
+  echo '}'
+  echo '}'
+} > "$OP/new.nft"
+nft --check --file "$OP/new.nft"
+for file in "$APPLY" "$UNIT"; do
+  [[ ! -f $file ]] || cp -p "$file" "$OP/$(basename "$file")"
+done
+forward_before=$(sysctl -n net.ipv4.ip_forward)
+was_enabled=0
+if systemctl is-enabled --quiet kitsune-bridge.service; then was_enabled=1; fi
+applied=0
+files_changed=0
+rollback() {
+  status=$?
+  trap - EXIT
+  if [[ $applied == 1 ]]; then
+    if [[ -f "$OP/old.nft" ]]; then
+      { echo "delete table ip $TABLE"; cat "$OP/old.nft"; } > "$OP/rollback.nft"
+      nft --file "$OP/rollback.nft" || echo 'RULE ROLLBACK FAILED: use provider console and retained files' >&2
+    else
+      nft delete table ip "$TABLE" || echo 'RULE ROLLBACK FAILED: use provider console' >&2
+    fi
+  fi
+  if [[ $forward_before == 0 ]]; then sysctl -qw net.ipv4.ip_forward=0 || echo 'ip_forward rollback failed' >&2; fi
+  if [[ $files_changed == 1 ]]; then
+    if [[ ! -f "$OP/$(basename "$UNIT")" ]]; then
+      flock -u 9
+      systemctl disable --now kitsune-bridge.service || echo 'New service cleanup requires attention' >&2
+      flock -w 30 9 || echo 'Could not reacquire bridge lock' >&2
+    elif [[ $was_enabled == 0 ]]; then
+      systemctl disable kitsune-bridge.service || echo 'Service enablement rollback requires attention' >&2
+    fi
+    for file in "$APPLY" "$UNIT"; do
+      if [[ -f "$OP/$(basename "$file")" ]]; then cp -p "$OP/$(basename "$file")" "$file"; else rm -f "$file"; fi
+    done
+    systemctl daemon-reload || echo 'systemd rollback requires attention' >&2
+  fi
+  rm -f "$STATE/pending"
+  echo "Operation failed. Recovery files: $OP" >&2
+  exit "$status"
+}
+trap rollback EXIT
+nft --file "$OP/new.nft"
+applied=1
+sysctl -qw net.ipv4.ip_forward=1
+if [[ ${1:-install} != start ]]; then
+  files_changed=1
+  install -m 700 "$0" "$APPLY.new"
+  mv "$APPLY.new" "$APPLY"
+  cat > "$UNIT.new" <<'UNITEOF'
+[Unit]
+Description=Kitsune bridge v2 (nftables, dedicated IPv4 bridge)
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/kitsune-bridge-apply start
+ExecStop=/usr/local/sbin/kitsune-bridge-apply stop
+UMask=0077
+[Install]
+WantedBy=multi-user.target
+UNITEOF
+  chmod 600 "$UNIT.new"
+  mv "$UNIT.new" "$UNIT"
+  systemctl daemon-reload
+  touch "$STATE/pending"
+  flock -u 9
+  if ! systemctl enable --now kitsune-bridge.service; then
+    flock -w 30 9
+    echo 'systemd activation failed' >&2
+    exit 1
+  fi
+  flock -w 30 9
+  rm -f "$STATE/pending"
+fi
+[[ ! -f "$OP/old.nft" ]] || cp "$OP/old.nft" "$STATE/previous.nft"
+[[ ! -f "$OP/kitsune-bridge-apply" ]] || cp -p "$OP/kitsune-bridge-apply" "$STATE/previous-apply"
+cp "$OP/new.nft" "$STATE/current.nft"
+trap - EXIT
+rm -rf "$OP"
+echo 'Bridge v2 applied. Verify REALITY/TUIC/Hysteria 2 with a real client.'

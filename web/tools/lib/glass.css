@@ -1,0 +1,10 @@
+/* Тема «Стекло» для встроенной страницы «Роутинг»: те же тоны, что в панели (web/static/glass.css) */
+html[data-theme="glass"] { color-scheme: dark; }
+html[data-theme="glass"][data-tone="night"] { --bg: transparent; --card: rgba(255, 255, 255, .06); --card2: rgba(255, 255, 255, .1); --inset: rgba(255, 255, 255, .09); --line: rgba(255, 255, 255, .14); --text: #f1f1f3; --muted: rgba(255, 255, 255, .72); --cream: #f1f1f3; --accent: #f6f6f8; --on-accent: #17131a; --pop: #3a3a3e; --accent-glow: rgba(255, 255, 255, .18); --warn: #ffc15a; --err: #ff8070; --ok: #5eeaa8; }
+html[data-theme="glass"][data-tone="dawn"] { color-scheme: light; --bg: transparent; --card: rgba(255, 255, 255, .6); --card2: rgba(255, 255, 255, .75); --inset: rgba(28, 34, 48, .07); --line: rgba(28, 34, 48, .14); --text: #1c2230; --muted: rgba(28, 34, 48, .72); --cream: #1c2230; --accent: #1c2230; --on-accent: #ffffff; --pop: #f2f2f4; --accent-glow: rgba(28, 34, 48, .22); --warn: #b9780f; --err: #cf4030; --ok: #1f9d6a; }
+html[data-theme="glass"] body { background: transparent; }
+
+/* Подсказки в полях и серые пояснения должны читаться на любом тоне */
+html[data-theme="glass"][data-tone="night"] ::placeholder { color: rgba(255, 255, 255, .58); opacity: 1; }
+html[data-theme="glass"][data-tone="dawn"] ::placeholder { color: rgba(28, 34, 48, .55); opacity: 1; }
+/* Акцент на сером и тёмном тоне – светлее, чтобы читался; ссылки в цвет текста */

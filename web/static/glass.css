@@ -1,0 +1,730 @@
+/* ===== Kitsune: тема «Стекло» =====
+   Включается html[data-theme="glass"] (по умолчанию) и тоном html[data-tone="..."]:
+     dawn  – «Рассвет», светлый
+     night – «Ночь», тёмный
+   Принцип: ровный однотонный фон, поверх него парящие матовые панели (размытие, светлая кромка, блик),
+   пилюли вместо прямоугольных кнопок, акцент – красно-оранжевый «солнечный диск».
+   Тема «classic» и «neon» (neon.css) от этого файла не зависят. */
+
+html[data-theme="glass"] {
+  --font-display: 'Unbounded', 'Plus Jakarta Sans', sans-serif;
+  --radius-card: 24px; --radius-btn: 999px; --radius-viewport: 34px;
+  color-scheme: dark;
+}
+
+/* ---------- Тоны ---------- */
+html[data-theme="glass"][data-tone="night"] {
+  --g-bg: #2b2b2e; --g-glass: rgba(255, 255, 255, .08); --g-glass2: rgba(255, 255, 255, .05); --g-glass3: rgba(255, 255, 255, .1);
+  --g-edge: rgba(255, 255, 255, .17); --g-hi: rgba(255, 255, 255, .2); --g-inset: rgba(255, 255, 255, .08); --g-chip: rgba(255, 255, 255, .11);
+  --g-pill: rgba(255, 255, 255, .92); --g-on-pill: #17131a; --g-modal: #3a3a3e; --g-hdr: rgba(60, 60, 63, .94);
+  --g-accent: #f6f6f8; --g-on-accent: #17131a; --g-line1: #d4d4da; --g-line2: #b8c4d6; --g-ok: #5eeaa8; --g-warn: #ffc15a; --g-bad: #ff8070; /* монохром: акцент это белый, текст на нём тёмный; цвет остаётся только у логотипа */
+  --g-shadow: 0 30px 60px -28px rgba(0, 0, 0, .7); --g-veil: rgba(0, 0, 0, .6);
+  --text-main: #f6f6f8; --text-secondary: rgba(255, 255, 255, .88); --text-muted: rgba(255, 255, 255, .7);
+  --line: rgba(255, 255, 255, .12); --line-strong: rgba(255, 255, 255, .26);
+}
+html[data-theme="glass"][data-tone="dawn"] {
+  --g-bg: #d6d6d9; --g-glass: rgba(255, 255, 255, .55); --g-glass2: rgba(255, 255, 255, .5); --g-glass3: rgba(255, 255, 255, .72);
+  --g-edge: rgba(255, 255, 255, .95); --g-hi: rgba(255, 255, 255, .9); --g-inset: rgba(28, 34, 48, .07); --g-chip: rgba(255, 255, 255, .75);
+  --g-pill: #1c2230; --g-on-pill: #fff; --g-modal: #f0f0f2; --g-hdr: rgba(236, 236, 238, .94);
+  --g-accent: #1c2230; --g-on-accent: #ffffff; --g-line1: #4a5266; --g-line2: #6b7a94; --g-ok: #1f9d6a; --g-warn: #b9780f; --g-bad: #cf4030;
+  --g-shadow: 0 30px 60px -30px rgba(60, 70, 100, .4); --g-veil: rgba(40, 46, 62, .38);
+  --text-main: #141a28; --text-secondary: rgba(20, 26, 40, .88); --text-muted: rgba(20, 26, 40, .72);
+  --line: rgba(28, 34, 48, .12); --line-strong: rgba(28, 34, 48, .26);
+  color-scheme: light;
+}
+
+/* ---------- Токены панели из токенов стекла ---------- */
+html[data-theme="glass"] {
+  --bg-canvas: var(--g-bg); --surface-sheet: var(--g-glass); --sheet: var(--g-glass); --surface-card: var(--g-glass2);
+  --surface-card-subtle: var(--g-glass3); --surface-inset: var(--g-inset); --sidebar-bg: transparent;
+  --accent-fox-orange: var(--g-accent); --accent-fox-orange-glow: color-mix(in srgb, var(--g-accent) 45%, transparent); --glow: color-mix(in srgb, var(--g-accent) 40%, transparent);
+  --accent-green: var(--g-ok); --accent-green-bg: color-mix(in srgb, var(--g-ok) 18%, transparent);
+  --accent-rose: var(--g-bad); --accent-rose-bg: color-mix(in srgb, var(--g-bad) 18%, transparent);
+  --chart-cpu: var(--g-accent); --chart-mem: var(--g-line2); --chart-rx: var(--g-ok); --chart-tx: var(--g-warn); --chart-ok: var(--g-ok); --chart-off: var(--text-muted); --chart-bad: var(--g-bad);
+  scrollbar-color: var(--g-edge) transparent;
+}
+html[data-theme="glass"] body { background: var(--g-bg); }
+html[data-theme="glass"] body::before { background: radial-gradient(1100px 600px at 6% -12%, rgba(255, 255, 255, .08), transparent 60%); }
+html[data-theme="glass"][data-tone="dawn"] body::before { background: radial-gradient(1100px 600px at 6% -12%, rgba(255, 255, 255, .7), transparent 60%); }
+html[data-theme="glass"] :focus-visible { outline: 2px solid var(--g-accent); outline-offset: 2px; }
+html[data-theme="glass"] ::selection { background: color-mix(in srgb, var(--g-accent) 45%, transparent); }
+
+/* ---------- Стекло: общий материал ---------- */
+html[data-theme="glass"] .workspace, html[data-theme="glass"] .sidebar {
+  background: var(--g-glass); border: 1px solid var(--g-edge); box-shadow: var(--g-shadow), inset 0 1px 0 var(--g-hi);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+}
+/* без backdrop-filter: иначе рабочая область становится опорой для position:fixed (окна и затемнение обрезались бы по ней), а на ровном фоне размытие ничего не даёт */
+html[data-theme="glass"] .workspace { border-radius: 34px; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme="glass"] .sidebar { border-radius: 34px; padding: 12px 8px 8px; }
+/* шапка идёт от края до края блока: перекрывает его рамку и повторяет её, цвет тот же, что у самого блока */
+html[data-theme="glass"] .page-header { margin: -1px -1px 0; width: calc(100% + 2px); align-self: flex-start; padding-left: 33px; padding-right: 33px; border: 1px solid var(--g-edge); border-bottom: 0; border-radius: 34px 34px 0 0;
+  background: linear-gradient(var(--g-hdr) 58%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+html[data-theme="glass"] .page-header h1 { font-family: var(--font-display); font-weight: 500; font-size: 24px; letter-spacing: -.02em; }
+html[data-theme="glass"] .page-header p { color: var(--text-secondary); }
+
+/* ---------- Логотипы: исходные (стеклянная лиса) ---------- */
+html[data-theme="glass"] .sb-logo img { filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .28)); }
+/* светлый тон: серые буквы надписи сливались с фоном, поэтому затемняем и усиливаем контраст */
+html[data-theme="glass"][data-tone="dawn"] .sb-name img { filter: brightness(.46) contrast(1.7) saturate(1.5) drop-shadow(0 1px 0 rgba(255, 255, 255, .6)); }
+html[data-theme="glass"] .sb-name img { filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .25)); }
+
+/* ---------- Меню ---------- */
+html[data-theme="glass"] .nav-group { color: var(--text-muted); letter-spacing: .16em; font-weight: 700; }
+html[data-theme="glass"] .nav-item { border-radius: 999px; color: var(--text-secondary); }
+html[data-theme="glass"] .nav-item .ni-ic { background: var(--g-chip); border: 0; border-radius: 50%; }
+html[data-theme="glass"] .nav-item:hover { background: var(--g-inset); color: var(--text-main); }
+html[data-theme="glass"] .nav-item.active { background: var(--g-pill); color: var(--g-on-pill); box-shadow: 0 12px 22px -12px rgba(0, 0, 0, .55); }
+html[data-theme="glass"] .nav-item.active::before { display: none; }
+html[data-theme="glass"] .nav-item.active .ni-ic { background: var(--g-accent); color: var(--g-on-accent); }
+html[data-theme="glass"] .ni-count { background: var(--g-chip); color: inherit; }
+html[data-theme="glass"] .nav-item.active .ni-count { background: rgba(0, 0, 0, .1); }
+html[data-theme="glass"] .sb-support .ni-ic { color: var(--g-accent); }
+html[data-theme="glass"] .sb-ver { color: var(--text-muted); }
+html[data-theme="glass"] .toggle-collapse-btn { background: var(--g-chip); border-color: var(--g-edge); color: var(--text-secondary); }
+html[data-theme="glass"] .toggle-collapse-btn:hover { color: var(--text-main); border-color: var(--line-strong); }
+
+/* ---------- Карточки и плитки ---------- */
+html[data-theme="glass"] .settings-card, html[data-theme="glass"] .chart-card, html[data-theme="glass"] .stat-tile,
+html[data-theme="glass"] .summary-card, html[data-theme="glass"] .user-card, html[data-theme="glass"] .ib-card, html[data-theme="glass"] .core-card {
+  background: var(--g-glass2); border: 1px solid var(--g-edge); border-radius: 24px; box-shadow: inset 0 1px 0 var(--g-hi);
+  transition: background .18s ease, border-color .18s ease;
+}
+html[data-theme="glass"] .user-card, html[data-theme="glass"] .ib-card { border-radius: 26px; }
+html[data-theme="glass"] .user-card:hover, html[data-theme="glass"] .ib-card:hover, html[data-theme="glass"] .stat-tile:hover { background: var(--g-glass3); border-color: var(--line-strong); }
+html[data-theme="glass"] .settings-card h3, html[data-theme="glass"] .chart-card h4 { font-family: var(--font-display); font-weight: 500; font-size: 14px; letter-spacing: -.01em; }
+html[data-theme="glass"] .chart-card h4 small { font-family: var(--font-sans); font-weight: 400; }
+html[data-theme="glass"] .settings-card h3 svg { color: var(--g-accent); }
+html[data-theme="glass"] .stat-tile .t-label { color: var(--text-muted); letter-spacing: .08em; }
+html[data-theme="glass"] .stat-tile .t-value, html[data-theme="glass"] .summary-details .num { font-family: var(--font-display); font-weight: 500; letter-spacing: -.03em; }
+html[data-theme="glass"] .action-banner { background: var(--g-glass2); border-color: var(--g-edge); }
+html[data-theme="glass"] #no-inbounds-callout { border-color: var(--g-accent) !important; background: color-mix(in srgb, var(--g-accent) 12%, transparent) !important; }
+html[data-theme="glass"] .empty-state { border-color: var(--line-strong); border-radius: 28px; }
+
+/* ---------- Главная ---------- */
+html[data-theme="glass"] .hero { border: 1px solid var(--g-edge); border-radius: 28px; box-shadow: inset 0 1px 0 var(--g-hi);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--g-ok) 20%, transparent), var(--g-glass2) 62%); }
+html[data-theme="glass"] .hero.warn { background: linear-gradient(120deg, color-mix(in srgb, var(--g-warn) 24%, transparent), var(--g-glass2) 62%); }
+html[data-theme="glass"] .hero.bad { background: linear-gradient(120deg, color-mix(in srgb, var(--g-bad) 24%, transparent), var(--g-glass2) 62%); }
+html[data-theme="glass"] .hero h2 { font-family: var(--font-display); font-weight: 500; font-size: 22px; letter-spacing: -.02em; }
+html[data-theme="glass"] .hero-ic { background: var(--g-ok); color: #06231a; box-shadow: 0 0 34px -4px var(--g-ok); }
+html[data-theme="glass"] .hero.warn .hero-ic { background: var(--g-warn); box-shadow: 0 0 34px -4px var(--g-warn); }
+html[data-theme="glass"] .hero.bad .hero-ic { background: var(--g-bad); color: #2a0a06; box-shadow: 0 0 34px -4px var(--g-bad); }
+
+/* ---------- Кнопки: пилюли ---------- */
+html[data-theme="glass"] .btn, html[data-theme="glass"] .btn-banner, html[data-theme="glass"] .btn-primary-action {
+  background: var(--g-accent); color: var(--g-on-accent); border-radius: 999px; box-shadow: 0 8px 16px -12px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+html[data-theme="glass"] .btn:hover, html[data-theme="glass"] .btn-banner:hover, html[data-theme="glass"] .btn-primary-action:hover { filter: brightness(1.06); }
+html[data-theme="glass"] .btn.soft { background: var(--g-chip); color: var(--text-main); border: 1px solid var(--g-edge); box-shadow: none; }
+html[data-theme="glass"] .btn.ghost { background: transparent; color: var(--text-main); border: 1px solid var(--line-strong); box-shadow: none; }
+html[data-theme="glass"] .btn.danger { background: var(--accent-rose-bg); color: var(--g-bad); border: 1px solid color-mix(in srgb, var(--g-bad) 45%, transparent); box-shadow: none; }
+html[data-theme="glass"] .btn-icon { background: var(--g-chip); border-color: var(--g-edge); border-radius: 50%; color: var(--text-secondary); }
+html[data-theme="glass"] .btn-icon:hover { background: var(--g-glass3); color: var(--text-main); border-color: var(--line-strong); }
+html[data-theme="glass"] .btn-icon.danger:hover { color: var(--g-bad); border-color: var(--g-bad); }
+html[data-theme="glass"] .btn-link { color: var(--text-secondary); }
+
+/* ---------- Формы, чипы, вкладки ---------- */
+html[data-theme="glass"] .search-box input, html[data-theme="glass"] .form-control { background: var(--g-inset); border: 1px solid var(--g-edge); border-radius: 18px; color: var(--text-main); }
+html[data-theme="glass"] .search-box input { border-radius: 999px; }
+html[data-theme="glass"] .form-control:hover { border-color: var(--line-strong); }
+html[data-theme="glass"] .search-box input:focus, html[data-theme="glass"] .form-control:focus { border-color: var(--g-accent); background: var(--g-glass3); box-shadow: 0 0 0 3px color-mix(in srgb, var(--g-accent) 22%, transparent); }
+html[data-theme="glass"] select.form-control option { background: var(--g-modal); color: var(--text-main); }
+html[data-theme="glass"] .chip { background: var(--g-chip); border: 0; color: var(--text-secondary); }
+html[data-theme="glass"] .chip:hover { color: var(--text-main); }
+html[data-theme="glass"] .chip.on { background: var(--g-pill); color: var(--g-on-pill); box-shadow: none; }
+html[data-theme="glass"] .tabs-strip { background: var(--g-chip); border: 1px solid var(--g-edge); border-radius: 999px; }
+html[data-theme="glass"] .tab-btn { border-radius: 999px; color: var(--text-secondary); }
+html[data-theme="glass"] .tab-btn:hover { color: var(--text-main); }
+html[data-theme="glass"] .tab-btn.active { background: var(--g-pill); color: var(--g-on-pill); box-shadow: none; }
+html[data-theme="glass"] .check-row { background: var(--g-glass2); border-color: var(--g-edge); border-radius: 18px; }
+html[data-theme="glass"] .check-row input[type=checkbox] { background: var(--g-inset); border: 0; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-main) 24%, transparent); } /* рамка внутри (inset), иначе она сдвигает кружок на 1px */
+html[data-theme="glass"] .switch { background: var(--g-inset); border: 0; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-main) 24%, transparent); } /* рамка внутри, чтобы кружок не смещался */
+html[data-theme="glass"] .check-row input[type=checkbox]:checked, html[data-theme="glass"] .switch.on { background: var(--g-ok); border-color: transparent; box-shadow: none; }
+html[data-theme="glass"] .preset { background: var(--g-glass2); border-color: var(--g-edge); border-radius: 18px; }
+html[data-theme="glass"] .preset.on { border-color: var(--g-accent); background: color-mix(in srgb, var(--g-accent) 14%, transparent); box-shadow: none; }
+html[data-theme="glass"] details.fold { background: var(--g-glass2); border-color: var(--g-edge); border-radius: 20px; }
+html[data-theme="glass"] .form-group > label, html[data-theme="glass"] .field-label { color: var(--text-secondary); }
+html[data-theme="glass"] .settings-nav button:hover { background: var(--g-inset); color: var(--text-main); }
+html[data-theme="glass"] .settings-nav button.on { background: var(--g-pill); color: var(--g-on-pill); box-shadow: none; }
+
+/* ---------- Списки, таблицы, индикаторы ---------- */
+html[data-theme="glass"] .user-avatar { background: linear-gradient(135deg, var(--g-accent), #7a6cf0); box-shadow: none; color: var(--g-on-accent); border-radius: 50%; }
+html[data-theme="glass"] .proto-badge { background: var(--g-chip); color: var(--text-secondary); }
+html[data-theme="glass"] .status-chip { border-color: var(--g-edge); }
+html[data-theme="glass"] .status-chip.chip-active, html[data-theme="glass"] .st.ok { background: var(--accent-green-bg); color: var(--g-ok); }
+html[data-theme="glass"] .status-chip.chip-inactive { background: var(--accent-rose-bg); color: var(--g-bad); }
+html[data-theme="glass"] .mini-table th { color: var(--text-muted); }
+html[data-theme="glass"] .mini-table td, html[data-theme="glass"] td { border-top-color: var(--line); }
+html[data-theme="glass"] .bar-track, html[data-theme="glass"] .tk { background: var(--g-chip); }
+html[data-theme="glass"] .bar-fill { background: linear-gradient(90deg, var(--g-line1), var(--g-accent)); box-shadow: none; }
+html[data-theme="glass"] .bar-fill.warn { background: var(--g-warn); } html[data-theme="glass"] .bar-fill.bad { background: var(--g-bad); }
+html[data-theme="glass"] .dot.ok { background: var(--g-ok); box-shadow: 0 0 10px var(--g-ok); }
+html[data-theme="glass"] .dot.bad { background: var(--g-bad); box-shadow: 0 0 10px var(--g-bad); }
+html[data-theme="glass"] .dot.warn { background: var(--g-warn); box-shadow: 0 0 10px var(--g-warn); }
+html[data-theme="glass"] .ib-state.ok { color: var(--g-ok); } html[data-theme="glass"] .ib-state.bad { color: var(--g-bad); } html[data-theme="glass"] .ib-state.warn { color: var(--g-warn); }
+html[data-theme="glass"] .health-summary.ok { background: var(--accent-green-bg); color: var(--g-ok); }
+html[data-theme="glass"] .health-summary.warn { background: color-mix(in srgb, var(--g-warn) 20%, transparent); color: var(--g-warn); }
+html[data-theme="glass"] .health-summary.bad { background: var(--accent-rose-bg); color: var(--g-bad); }
+html[data-theme="glass"] .health-row { background: var(--g-glass2); }
+html[data-theme="glass"] .hspin, html[data-theme="glass"] .health-summary.live .hbar i { border-top-color: var(--g-accent); background-color: var(--g-accent); }
+html[data-theme="glass"] .core-card { background: var(--g-glass2); } html[data-theme="glass"] .core-head:hover { background: var(--g-inset); }
+html[data-theme="glass"] .chart .grid line { stroke: var(--line); }
+
+/* ---------- Мастер, групповые действия, меню «⋯» ---------- */
+html[data-theme="glass"] .wizard { background: var(--g-glass2); border: 1px solid var(--g-edge); border-radius: 28px; }
+html[data-theme="glass"] .wizard-head h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: -.01em; }
+html[data-theme="glass"] .wizard-bar { background: var(--g-chip); } html[data-theme="glass"] .wizard-bar-fill { background: linear-gradient(90deg, var(--g-line1), var(--g-accent)); }
+html[data-theme="glass"] .wizard-step { background: var(--g-inset); border-radius: 22px; }
+html[data-theme="glass"] .wizard-step.current { border-color: var(--g-accent); }
+html[data-theme="glass"] .wizard-num { background: var(--g-chip); border-color: var(--g-edge); }
+html[data-theme="glass"] .wizard-step.current .wizard-num { background: var(--g-accent); border-color: var(--g-accent); color: var(--g-on-accent); }
+html[data-theme="glass"] .wizard-step.done .wizard-num { background: var(--g-ok); border-color: var(--g-ok); color: #06231a; }
+html[data-theme="glass"] .user-card.sel { border-color: var(--g-accent); background: color-mix(in srgb, var(--g-accent) 10%, transparent); box-shadow: none; }
+html[data-theme="glass"] .bulk-bar, html[data-theme="glass"] .u-menu { background: var(--g-modal); border: 1px solid var(--g-edge); border-radius: 22px; box-shadow: 0 24px 50px -16px rgba(0, 0, 0, .5); }
+html[data-theme="glass"] .bulk-bar { border-color: var(--g-accent); border-radius: 999px; padding: 10px 18px; }
+html[data-theme="glass"] .u-menu button:hover, html[data-theme="glass"] .u-menu button:focus-visible { background: var(--g-inset); }
+html[data-theme="glass"] .u-menu button.danger, html[data-theme="glass"] .btn.danger { color: var(--g-bad); }
+
+/* ---------- Окна и диалоги ---------- */
+html[data-theme="glass"] .modal-overlay, html[data-theme="glass"] .dlg-overlay, html[data-theme="glass"] .drawer-backdrop { background: var(--g-veil); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+html[data-theme="glass"] .modal-card, html[data-theme="glass"] .dlg-card { background: var(--g-modal); border: 1px solid var(--g-edge); box-shadow: 0 40px 90px -24px rgba(0, 0, 0, .55), inset 0 1px 0 var(--g-hi); }
+/* Окно – парящая карточка со скруглением со всех сторон; на телефоне – лист снизу со скруглёнными верхними углами */
+html[data-theme="glass"] .modal-card { border-radius: 34px; margin: 14px; height: calc(100dvh - 28px); } html[data-theme="glass"] .dlg-card { border-radius: 30px; }
+@media (max-width: 900px) { html[data-theme="glass"] .modal-card { margin: 0; height: 92dvh; border-radius: 28px 28px 0 0; } }
+html[data-theme="glass"] .modal-card > .modal-head, html[data-theme="glass"] .modal-card > .modal-foot { background: var(--g-modal); }
+html[data-theme="glass"] .modal-card > .modal-foot { background: var(--g-modal); border-top: 1px solid var(--g-edge); } /* сплошной низ: под кнопками не просвечивает текст формы */
+html[data-theme="glass"] .modal-head h3, html[data-theme="glass"] .dlg-card h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: -.01em; }
+html[data-theme="glass"] .modal-x:hover { color: var(--text-main); border-color: var(--line-strong); }
+
+/* ---------- Вход ---------- */
+html[data-theme="glass"] #auth-panel.login-box { background: var(--g-glass); border: 1px solid var(--g-edge); border-radius: 34px; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: var(--g-shadow), inset 0 1px 0 var(--g-hi); }
+html[data-theme="glass"] #auth-panel h2 { font-family: var(--font-display); font-weight: 500; letter-spacing: -.02em; }
+html[data-theme="glass"] #auth-panel .fox-brand-avatar { filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .3)); }
+
+/* ---------- Выбор оформления ---------- */
+html[data-theme="glass"] .theme-pop { background: var(--g-modal); border-color: var(--g-edge); }
+html[data-theme="glass"] .theme-pop button:hover, html[data-theme="glass"] .theme-pop button.on { background: var(--g-inset); }
+
+/* ---------- Телефон ---------- */
+html[data-theme="glass"] .appbar { background: var(--g-hdr); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom-color: var(--g-edge); }
+html[data-theme="glass"] .appbar-title { font-family: var(--font-display); font-weight: 500; font-size: 15px; letter-spacing: -.01em; }
+html[data-theme="glass"] .appbar-btn { color: var(--text-main); }
+@media (max-width: 900px) {
+  html[data-theme="glass"] .workspace { border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
+  html[data-theme="glass"] .sidebar, html[data-theme="glass"] .sidebar:not(.expanded) { background: var(--g-modal); border-radius: 0 30px 30px 0; }
+  html[data-theme="glass"] .page-header { border-radius: 0; margin: 0; padding-left: 16px; padding-right: 16px; border: 0; width: auto; align-self: stretch; }
+  html[data-theme="glass"] .page-header h1 { font-size: 21px; }
+  html[data-theme="glass"] .hero h2 { font-size: 18px; }
+  html[data-theme="glass"] .hero { border-radius: 24px; }
+  html[data-theme="glass"] .stat-tiles, html[data-theme="glass"] .stat-tiles.kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html[data-theme="glass"] .stat-tile { min-width: 0; padding: 14px; }
+  html[data-theme="glass"] .stat-tile .t-label { font-size: 10.5px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html[data-theme="glass"] .stat-tile .t-value { font-size: 17px; overflow-wrap: anywhere; }
+}
+@media (max-width: 520px) { html[data-theme="glass"] .stat-tiles:not(.kpis) { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Светлый тон: жёстко заданные тёмные подсветки из ui2.css ---------- */
+html[data-theme="glass"][data-tone="dawn"] .nav-item:hover, html[data-theme="glass"][data-tone="dawn"] .nav-sub-item:hover,
+html[data-theme="glass"][data-tone="dawn"] .settings-nav button:hover, html[data-theme="glass"][data-tone="dawn"] .appbar-btn:hover { background: rgba(28, 34, 48, .06); color: var(--text-main); }
+html[data-theme="glass"][data-tone="dawn"] .chip:hover, html[data-theme="glass"][data-tone="dawn"] .btn-icon:hover { color: var(--text-main); }
+html[data-theme="glass"][data-tone="dawn"] .nav-item.active .ni-ic { color: #fff; }
+html[data-theme="glass"][data-tone="dawn"] .toggle-collapse-btn:hover { background: #fff; }
+
+@media (prefers-contrast: more) {
+  html[data-theme="glass"] { --line: var(--line-strong); --text-secondary: var(--text-main); --text-muted: var(--text-secondary); }
+}
+html[data-theme="glass"][data-tone="dawn"] .theme-pop button:hover, html[data-theme="glass"][data-tone="dawn"] .theme-pop button.on { background: rgba(28, 34, 48, .07); }
+html[data-theme="glass"] ::placeholder { color: var(--text-muted); opacity: 1; }
+html[data-theme="glass"] .wizard-step.todo { opacity: .82; }
+html[data-theme="glass"] .stat-tile .t-sub, html[data-theme="glass"] .t-sub { color: var(--text-muted); }
+html[data-theme="glass"] button.sb-ver:hover { background: var(--g-inset); }
+
+/* ---------- Логотип «Стекла»: плоская лиса в кружке и надпись ---------- */
+.logo-glass, .logo-glass-text { display: none; }
+html[data-theme="glass"] .logo-classic { display: none !important; }
+html[data-theme="glass"] .sb-logo { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: none; border: 0; }
+html[data-theme="glass"] .sb-logo img.logo-glass { display: block; width: 100%; height: 100%; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .3)); }
+html[data-theme="glass"] .sb-name { justify-content: center; }
+html[data-theme="glass"] .logo-glass-text { display: block; font: 600 25px/1 var(--font-display); letter-spacing: -.03em; color: var(--text-main); white-space: nowrap; }
+html[data-theme="glass"] #auth-panel .fox-brand-btn { background: none; border: 0; border-radius: 50% !important; display: grid; place-items: center; }
+html[data-theme="glass"] #auth-panel .fox-brand-avatar.logo-glass { display: block; width: 100%; height: 100%; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .25)); }
+html[data-theme="glass"] .sb-name img.logo-classic { display: none !important; }
+
+/* ---------- Читаемость: плотнее шрифт и чуть крупнее мелкие подписи ---------- */
+html[data-theme="glass"] body { font-weight: 500; }
+html[data-theme="glass"] .page-header p { font-size: 14px; }
+html[data-theme="glass"] .nav-group { font-size: 11.5px; font-weight: 800; color: var(--text-secondary); }
+html[data-theme="glass"] .stat-tile .t-label { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+html[data-theme="glass"] .t-sub, html[data-theme="glass"] .stat-tile .t-sub { font-size: 13px; color: var(--text-secondary); }
+html[data-theme="glass"] .health-group h5 { font-size: 13px; color: var(--text-secondary); }
+html[data-theme="glass"] .btn-link { color: var(--text-main); text-underline-offset: 3px; }
+html[data-theme="glass"] .form-hint, html[data-theme="glass"] .sec-intro, html[data-theme="glass"] .legend, html[data-theme="glass"] small { color: var(--text-muted); }
+html[data-theme="glass"] .chart-card h4 small, html[data-theme="glass"] .metric-label-row, html[data-theme="glass"] .bh span { color: var(--text-secondary); }
+html[data-theme="glass"] .sb-ver { color: var(--text-secondary); }
+html[data-theme="glass"] ::placeholder { color: var(--text-muted); }
+
+/* ---------- Типографика как в макете «Серый»: крупнее и плотнее ---------- */
+html[data-theme="glass"] body { font-size: 14.5px; font-weight: 500; line-height: 1.5; }
+html[data-theme="glass"] .page-header h1 { font-size: 28px; letter-spacing: -.025em; }
+html[data-theme="glass"] .page-header p { font-size: 14.5px; }
+html[data-theme="glass"] .nav-item { font-size: 14.5px; font-weight: 600; }
+html[data-theme="glass"] .nav-group { font-size: 11.5px; letter-spacing: .18em; }
+html[data-theme="glass"] .stat-tile { padding: 20px 22px; }
+html[data-theme="glass"] .stat-tile .t-label { font-size: 12px; letter-spacing: .1em; }
+html[data-theme="glass"] .stat-tile .t-value { font-size: 34px; line-height: 1.15; letter-spacing: -.035em; margin: 6px 0 4px; }
+html[data-theme="glass"] .stat-tile .t-sub, html[data-theme="glass"] .t-sub { font-size: 13.5px; }
+html[data-theme="glass"] .hero { padding: 26px 30px; }
+html[data-theme="glass"] .hero h2 { font-size: 28px; letter-spacing: -.03em; }
+html[data-theme="glass"] .hero p, html[data-theme="glass"] #hero-sub { font-size: 14.5px; }
+html[data-theme="glass"] .hero-ic { width: 60px; height: 60px; font-size: 28px; }
+html[data-theme="glass"] .settings-card, html[data-theme="glass"] .chart-card { padding: 22px 24px; }
+html[data-theme="glass"] .settings-card h3, html[data-theme="glass"] .chart-card h4 { font-size: 15px; }
+html[data-theme="glass"] .settings-card p, html[data-theme="glass"] .sec-intro, html[data-theme="glass"] .form-hint { font-size: 14px; line-height: 1.55; }
+html[data-theme="glass"] .btn, html[data-theme="glass"] .btn-banner { font-size: 14px; font-weight: 700; padding: 12px 22px; }
+html[data-theme="glass"] .btn.sm { font-size: 13.5px; padding: 9px 16px; }
+html[data-theme="glass"] .chip, html[data-theme="glass"] .tab-btn { font-size: 14px; }
+html[data-theme="glass"] .form-control, html[data-theme="glass"] .search-box input { font-size: 14.5px; }
+html[data-theme="glass"] .user-card { padding: 16px 22px; } html[data-theme="glass"] .user-name { font-size: 15.5px; font-weight: 700; }
+html[data-theme="glass"] .health-row, html[data-theme="glass"] .core-head .lt small { font-size: 14px; }
+html[data-theme="glass"] .health-group h5 { font-size: 13px; }
+html[data-theme="glass"] .mini-table td, html[data-theme="glass"] td { font-size: 14px; }
+html[data-theme="glass"] .mini-table th, html[data-theme="glass"] th { font-size: 12px; }
+@media (max-width: 900px) {
+  html[data-theme="glass"] .stat-tile .t-value { font-size: 24px; }
+  html[data-theme="glass"] .hero h2 { font-size: 19px; }
+  html[data-theme="glass"] .page-header h1 { font-size: 22px; }
+  html[data-theme="glass"] body { font-size: 14px; }
+}
+html[data-theme="glass"] .wizard-head p { font-size: 14px; color: var(--text-secondary); }
+html[data-theme="glass"] .wizard-body b { font-size: 15.5px; }
+html[data-theme="glass"] .wizard-body span { font-size: 13.5px; color: var(--text-secondary); }
+html[data-theme="glass"] .wizard-skip { font-size: 14px; color: var(--text-secondary); }
+html[data-theme="glass"] .toolbar .sort-box, html[data-theme="glass"] .sort-box span { font-size: 13.5px; color: var(--text-secondary); }
+html[data-theme="glass"] .user-uuid, html[data-theme="glass"] .metric-label-row, html[data-theme="glass"] .user-expiry-box { font-size: 13.5px; }
+html[data-theme="glass"] .user-uuid, html[data-theme="glass"] .metric-label-row span:first-child { color: var(--text-secondary); }
+
+/* ---------- Меню: кнопки крупнее (в развёрнутом и свёрнутом виде) ---------- */
+html[data-theme="glass"] { --sidebar-w: 320px; }
+html[data-theme="glass"] .nav-item { height: 54px; gap: 14px; padding: 0 14px 0 8px; font-size: 15.5px; font-weight: 600; }
+html[data-theme="glass"] .nav-item .ni-ic { width: 40px; height: 40px; }
+html[data-theme="glass"] .nav-item .ni-ic svg { width: 23px; height: 23px; }
+html[data-theme="glass"] .nav-group { padding: 20px 14px 8px; }
+html[data-theme="glass"] .ni-count { font-size: 12.5px; padding: 3px 9px; }
+html[data-theme="glass"] .sb-logout { min-height: 54px; }
+html[data-theme="glass"] .toggle-collapse-btn { width: 42px; height: 38px; border-radius: 14px; }
+html[data-theme="glass"] .sb-ver { font-size: 12.5px; }
+html[data-theme="glass"] .sb-logo { width: 64px; height: 64px; }
+html[data-theme="glass"] .logo-glass-text { font-size: 27px; }
+/* свёрнутое меню: крупные круглые значки */
+html[data-theme="glass"] .sidebar:not(.expanded) { width: 108px; }
+html[data-theme="glass"] .sidebar:not(.expanded) .nav-item { height: 54px; padding: 0; }
+html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic { width: 46px; height: 46px; }
+html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic svg { width: 26px; height: 26px; }
+html[data-theme="glass"] .sidebar:not(.expanded) .nav-group { margin: 12px 22px; }
+html[data-theme="glass"] .sidebar:not(.expanded) .sb-logo { width: 60px; height: 60px; }
+@media (min-width: 901px) and (max-width: 1180px) {
+  html[data-theme="glass"] .sidebar { width: 96px; }
+  html[data-theme="glass"] .nav-item { height: 58px; padding: 0; }
+  html[data-theme="glass"] .nav-item .ni-ic { width: 48px; height: 48px; }
+  html[data-theme="glass"] .nav-item .ni-ic svg { width: 26px; height: 26px; }
+}
+@media (max-width: 900px) {
+  html[data-theme="glass"] .sidebar:not(.expanded) { width: auto; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item { height: 54px; padding: 0 14px 0 8px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic { width: 40px; height: 40px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic svg { width: 23px; height: 23px; }
+}
+html[data-theme="glass"] .nav-item { flex-shrink: 0; }
+html[data-theme="glass"] .nav-list { scrollbar-width: none; } html[data-theme="glass"] .nav-list::-webkit-scrollbar { display: none; }
+
+/* сдержанный акцент: без свечения у главных элементов */
+html[data-theme="glass"] .btn:hover, html[data-theme="glass"] .btn-banner:hover, html[data-theme="glass"] .btn-primary-action:hover { filter: brightness(1.05); }
+html[data-theme="glass"] .nav-item.active .ni-ic { background: var(--g-accent); box-shadow: none; }
+html[data-theme="glass"] .hero-ic { box-shadow: none; }
+html[data-theme="glass"] .bar-fill { background: linear-gradient(90deg, var(--g-line1), var(--g-accent)); }
+html[data-theme="glass"] #no-inbounds-callout { background: color-mix(in srgb, var(--g-accent) 9%, transparent) !important; border-color: color-mix(in srgb, var(--g-accent) 55%, transparent) !important; }
+html[data-theme="glass"] .ni-badge { box-shadow: none; }
+/* свёрнутое меню: активный пункт – только круглый значок, без плашки на всю ширину */
+html[data-theme="glass"] .sidebar:not(.expanded) .nav-item.active { background: transparent; box-shadow: none; }
+html[data-theme="glass"] .sidebar:not(.expanded) .nav-item.active .ni-ic { background: var(--g-pill); color: var(--g-on-pill); box-shadow: 0 10px 18px -10px rgba(0, 0, 0, .55); }
+@media (max-width: 900px) {
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item.active { background: var(--g-pill); }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item.active .ni-ic { background: var(--g-accent); color: var(--g-on-accent); box-shadow: none; }
+}
+
+/* ---------- Кнопки: серые с красной обводкой (заливка красным только на входе) ---------- */
+html[data-theme="glass"] .btn, html[data-theme="glass"] .btn-banner, html[data-theme="glass"] .btn-primary-action {
+  background: var(--g-chip); color: var(--text-main); border: 1.5px solid var(--g-accent);
+  box-shadow: inset 0 1px 0 var(--g-hi);
+}
+html[data-theme="glass"] .btn:hover, html[data-theme="glass"] .btn-banner:hover, html[data-theme="glass"] .btn-primary-action:hover {
+  background: color-mix(in srgb, var(--g-accent) 24%, var(--g-chip)); filter: none;
+}
+html[data-theme="glass"] .btn:active, html[data-theme="glass"] .btn-banner:active, html[data-theme="glass"] .btn-primary-action:active { background: color-mix(in srgb, var(--g-accent) 34%, var(--g-chip)); }
+html[data-theme="glass"] .btn.soft { border: 1.5px solid var(--g-edge); }
+html[data-theme="glass"] .btn.soft:hover { background: var(--g-glass3); }
+html[data-theme="glass"] .btn.danger { border-width: 1.5px; }
+html[data-theme="glass"] .btn:disabled, html[data-theme="glass"] .btn[disabled] { opacity: .5; border-color: var(--g-edge); }
+html[data-theme="glass"] .btn svg, html[data-theme="glass"] .btn-primary-action svg { stroke: currentColor; }
+html[data-theme="glass"] #auth-panel .btn-banner { background: var(--g-accent); color: var(--g-on-accent); border-color: transparent; box-shadow: 0 8px 16px -12px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .18); }
+html[data-theme="glass"] #auth-panel .btn-banner:hover { background: color-mix(in srgb, var(--g-accent) 88%, #fff); }
+
+/* =====================================================================
+   Раскладка как в макете glass.html: верхняя пилюля, левая рейка с подписями,
+   нижняя пилюля-вкладки, бенто-главная (только на широких экранах)
+   ===================================================================== */
+.gtop, .conn-card { display: none; }
+@media (min-width: 901px) {
+  html[data-theme="glass"] .app-layout:not([style*="display: none"]) { display: grid !important; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 14px; align-items: start; }
+  html[data-theme="glass"] .gtop {
+    display: flex; align-items: center; gap: 14px; grid-column: 1 / -1; position: sticky; top: 14px; z-index: 60; padding: 10px 14px; border-radius: 999px;
+    background: var(--g-glass); border: 1px solid var(--g-edge); box-shadow: var(--g-shadow), inset 0 1px 0 var(--g-hi);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  }
+  html[data-theme="glass"] .sidebar { grid-column: 1; grid-row: 2; position: sticky; top: 100px; align-self: start; height: calc(100vh - 114px); }
+  html[data-theme="glass"] .workspace { grid-column: 2; grid-row: 2; min-height: calc(100vh - 114px); }
+  html[data-theme="glass"] .sb-brand { display: none; }
+  html[data-theme="glass"] .sidebar { padding-top: 12px; }
+  html[data-theme="glass"] .page-header { top: 0; }
+}
+
+/* ---- верхняя пилюля ---- */
+html[data-theme="glass"] .gtop-logo { width: 46px; height: 46px; border-radius: 50%; background: none; border: 0; display: grid; place-items: center; padding: 0; cursor: pointer; flex: none; }
+html[data-theme="glass"] .gtop-logo img { width: 100%; height: 100%; display: block; }
+html[data-theme="glass"] .gtop-brand { font: 600 21px/1 var(--font-display); letter-spacing: -.03em; color: var(--text-main); }
+html[data-theme="glass"] .gtop-status { display: inline-flex; align-items: center; gap: 9px; padding: 9px 16px; border-radius: 999px; background: var(--g-chip); border: 0; color: var(--text-main); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+html[data-theme="glass"] .gtop-status i { width: 9px; height: 9px; border-radius: 50%; background: var(--g-ok); box-shadow: 0 0 9px var(--g-ok); }
+html[data-theme="glass"] .gtop-status[data-level="warn"] i { background: var(--g-warn); box-shadow: 0 0 9px var(--g-warn); }
+html[data-theme="glass"] .gtop-status[data-level="bad"] i { background: var(--g-bad); box-shadow: 0 0 9px var(--g-bad); }
+html[data-theme="glass"] .gtop-search { position: relative; flex: 1; min-width: 160px; max-width: 540px; margin: 0 auto; display: flex; align-items: center; }
+html[data-theme="glass"] .gtop-search > svg { position: absolute; left: 18px; color: var(--text-muted); pointer-events: none; }
+html[data-theme="glass"] .gtop-search input { width: 100%; padding: 12px 18px 12px 46px; border-radius: 999px; background: var(--g-chip); border: 1px solid transparent; color: var(--text-main); font: inherit; font-size: 14.5px; }
+html[data-theme="glass"] .gtop-search input:focus { outline: none; border-color: var(--g-accent); background: var(--g-glass3); }
+html[data-theme="glass"] .gsearch-res { position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: var(--g-modal); border: 1px solid var(--g-edge); border-radius: 24px; padding: 8px; box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .55); z-index: 90; max-height: 60vh; overflow: auto; }
+html[data-theme="glass"] .gsearch-res[hidden] { display: none; }
+html[data-theme="glass"] .gs-h { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px 4px; }
+html[data-theme="glass"] .gs-item { display: flex; flex-direction: column; width: 100%; text-align: left; background: none; border: 0; color: var(--text-main); font: inherit; padding: 9px 12px; border-radius: 14px; cursor: pointer; }
+html[data-theme="glass"] .gs-item b { font-weight: 600; } html[data-theme="glass"] .gs-item small { color: var(--text-muted); font-size: 12.5px; }
+html[data-theme="glass"] .gs-item:hover, html[data-theme="glass"] .gs-item.sel { background: var(--g-inset); }
+html[data-theme="glass"] .gs-empty { padding: 14px 12px; color: var(--text-muted); }
+html[data-theme="glass"] .gtop-tone { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--g-chip); flex: none; }
+html[data-theme="glass"] .gtop-tone button { padding: 8px 16px; border-radius: 999px; border: 0; background: none; color: var(--text-secondary); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+html[data-theme="glass"] .gtop-tone button:hover { color: var(--text-main); }
+html[data-theme="glass"] .gtop-tone button.on { background: var(--g-pill); color: var(--g-on-pill); }
+html[data-theme="glass"] .gtop-ver { background: none; border: 0; color: var(--text-secondary); font: inherit; font-size: 12.5px; padding: 8px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+html[data-theme="glass"] .gtop-ver:hover { background: var(--g-inset); color: var(--text-main); }
+html[data-theme="glass"] .gtop-logout { display: inline-flex; align-items: center; gap: 10px; height: 46px; padding: 0 20px 0 16px; border-radius: 999px; background: var(--g-chip); border: 1px solid var(--g-edge); color: var(--text-main); font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; flex: none; white-space: nowrap; }
+html[data-theme="glass"] .gtop-logout:hover { background: var(--g-glass3); border-color: var(--line-strong); }
+html[data-theme="glass"] .gtop-logout svg { flex: none; }
+
+/* ---- левая рейка: значок и подпись под ним ---- */
+@media (min-width: 901px) {
+  html[data-theme="glass"] .sidebar:not(.expanded) { width: 116px; padding-left: 6px; padding-right: 6px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item { flex-direction: column; height: auto; padding: 6px 2px 5px; gap: 3px; border-radius: 22px; justify-content: center; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic { width: 44px; height: 44px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-tx { display: block !important; flex: none; font-size: 11px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; text-align: center; white-space: normal; max-width: 100%; overflow: visible; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item.active { color: var(--text-main); }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item.active .ni-tx { font-weight: 700; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .ni-count { display: none !important; }
+  /* в узкой рейке подписи групп не видны, но их пустые блоки с отступами давали неравные промежутки: прячем, промежуток у всех пунктов один */
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-group { display: none; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-list, html[data-theme="glass"] .sidebar:not(.expanded) .sb-foot { gap: 6px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-foot-row { flex-direction: row; justify-content: center; gap: 6px; flex-wrap: wrap; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-logout { min-height: 0; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .toggle-collapse-btn { width: 36px; height: 34px; transform: none; }
+  html[data-theme="glass"] .sidebar:not(.expanded) #collapse-icon { transform: rotate(180deg); }
+}
+
+/* ---- горизонтальные вкладки страницы: пилюля сверху, под заголовком ---- */
+html[data-theme="glass"] .tabs-strip { position: static; margin: 0 0 4px; align-self: flex-start; padding: 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--g-modal) 70%, transparent); border: 1px solid var(--g-edge); box-shadow: inset 0 1px 0 var(--g-hi); }
+html[data-theme="glass"] .tab-btn { padding: 11px 26px; font-size: 15px; font-weight: 700; min-height: 44px; }
+
+html[data-theme="glass"] .action-banner h3, html[data-theme="glass"] .banner-text h3 { color: var(--text-main); }
+html[data-theme="glass"] .action-banner p, html[data-theme="glass"] .banner-text p { color: var(--text-secondary); }
+
+/* ---------- Оранжевый с градиентом: светлый персиковый -> насыщенный ---------- */
+html[data-theme="glass"] { --g-grad: linear-gradient(90deg, var(--g-line1), var(--g-accent)); --g-grad-d: linear-gradient(135deg, var(--g-line1), var(--g-accent)); }
+html[data-theme="glass"] .bar-fill, html[data-theme="glass"] .tk i, html[data-theme="glass"] .wizard-bar-fill, html[data-theme="glass"] .t i { background: var(--g-grad); box-shadow: none; }
+html[data-theme="glass"] .bar-fill.warn, html[data-theme="glass"] .tk.warn i { background: var(--g-warn); }
+html[data-theme="glass"] .bar-fill.bad { background: var(--g-bad); }
+html[data-theme="glass"] .nav-item.active .ni-ic, html[data-theme="glass"] .wizard-step.current .wizard-num { background: var(--g-grad-d); }
+html[data-theme="glass"] .sidebar:not(.expanded) .nav-item.active .ni-ic { background: var(--g-pill); color: var(--g-on-pill); }
+html[data-theme="glass"] .user-avatar { background: var(--g-grad-d); }
+html[data-theme="glass"] #auth-panel .btn-banner { background: var(--g-grad); }
+html[data-theme="glass"] .btn:hover, html[data-theme="glass"] .btn-banner:hover, html[data-theme="glass"] .btn-primary-action:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--g-line1) 30%, var(--g-chip)), color-mix(in srgb, var(--g-accent) 34%, var(--g-chip))); }
+html[data-theme="glass"] .hero-ic { background: var(--g-ok); }
+@media (max-width: 900px) { html[data-theme="glass"] .sidebar:not(.expanded) .nav-item.active .ni-ic { background: var(--g-grad-d); color: #fff; } }
+
+/* =====================================================================
+   Полировка: отступы, скругления, тексты
+   ===================================================================== */
+/* кнопки в карточках настроек не растягиваются на всю ширину */
+html[data-theme="glass"] .settings-card .btn-banner, html[data-theme="glass"] .settings-card .btn:not(.sm) { width: fit-content; align-self: flex-start; }
+html[data-theme="glass"] .settings-card .btn-icon { align-self: auto; }
+/* нижняя пилюля не закрывает конец страницы */
+/* плашки с тёмной заливкой из разметки – в материал стекла */
+html[data-theme="glass"] .action-banner { background: var(--g-glass2) !important; border: 1px solid var(--g-edge) !important; border-radius: 26px; }
+html[data-theme="glass"] .action-banner h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; letter-spacing: -.01em; }
+html[data-theme="glass"] .core-warn { font-size: 13px; line-height: 1.5; }
+/* выбор файла */
+html[data-theme="glass"] input[type="file"] { color: var(--text-secondary); font-size: 13.5px; }
+html[data-theme="glass"] input[type="file"]::file-selector-button { margin-right: 12px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--g-edge); background: var(--g-chip); color: var(--text-main); font: inherit; font-weight: 600; cursor: pointer; }
+/* итог проверки на «Здоровье»: читаемый текст, цветная иконка */
+html[data-theme="glass"] .health-summary { color: var(--text-main); border-radius: 22px; padding: 16px 22px; font-size: 15px; border: 1px solid var(--g-edge); }
+html[data-theme="glass"] .health-summary svg { flex: none; }
+html[data-theme="glass"] .health-summary.ok svg { color: var(--g-ok); } html[data-theme="glass"] .health-summary.warn svg { color: var(--g-warn); } html[data-theme="glass"] .health-summary.bad svg { color: var(--g-bad); }
+html[data-theme="glass"] .health-summary.ok, html[data-theme="glass"] .health-summary.warn, html[data-theme="glass"] .health-summary.bad { color: var(--text-main); }
+html[data-theme="glass"] .health-group h5 { margin-top: 18px; }
+html[data-theme="glass"] .health-row { border-radius: 18px; padding: 11px 16px; }
+/* единые скругления полей и вложенных блоков */
+html[data-theme="glass"] textarea.form-control { border-radius: 20px; }
+html[data-theme="glass"] select.form-control { border-radius: 999px; padding-left: 18px; }
+html[data-theme="glass"] .form-control { padding: 12px 18px; }
+html[data-theme="glass"] .core-card { border-radius: 26px; } html[data-theme="glass"] .core-head { padding: 14px 18px; }
+html[data-theme="glass"] .settings-card { display: flex; flex-direction: column; gap: 14px; }
+html[data-theme="glass"] .settings-card > h3 { margin: 0; }
+/* на широких экранах содержимое стоит по центру (max-width), а шапка тянется на всю ширину блока: рамка не обрывается,
+   текст шапки выравнивается по тому же левому краю, что и содержимое */
+html[data-theme="glass"] .page-header { max-width: none; padding: 26px max(34px, calc((100% - 1560px) / 2 + 34px)) 22px; }
+@media (min-width: 1900px) { html[data-theme="glass"] .page-header { padding-inline: max(34px, calc((100% - 1720px) / 2 + 34px)); } }
+html[data-theme="glass"] .workspace > section { padding-left: 34px; padding-right: 34px; }
+html[data-theme="glass"] .toolbar { gap: 12px; }
+html[data-theme="glass"] .empty-state { border-radius: 28px; padding: 48px 24px; }
+html[data-theme="glass"] .empty-state h4 { font-family: var(--font-display); font-weight: 500; font-size: 16px; }
+html[data-theme="glass"] .tabs-strip .tab-btn { min-height: 42px; }
+@media (max-width: 900px) {
+  html[data-theme="glass"] .workspace > section { padding-left: 16px; padding-right: 16px; }
+  html[data-theme="glass"] .page-header { padding: 18px 16px 14px; }
+}
+html[data-theme="glass"] .settings-card .btn-banner[style*="width: 100%"] { width: fit-content !important; }
+html[data-theme="glass"] .settings-card div[style*="border-top"] { border-top-color: var(--line) !important; }
+
+/* Версия живёт в левом меню и пишется целиком: в рейке под значками, в развёрнутом меню без обрезки */
+@media (min-width: 901px) {
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-ver { display: block !important; flex: 1 0 100%; order: -1; text-align: center; padding: 6px 0 8px; font-size: 12px; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25; }
+}
+html[data-theme="glass"] .sb-foot-row .sb-ver { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25; font-size: 13px; }
+
+/* «Выйти» живёт в верхней пилюле, из вертикального меню убран (на телефоне, где пилюли нет, остаётся) */
+@media (min-width: 901px) { html[data-theme="glass"] .sb-logout { display: none; } }
+@media (min-width: 901px) and (max-width: 1100px) { html[data-theme="glass"] .gtop-logout span { display: none; } html[data-theme="glass"] .gtop-logout { padding: 0 14px; } }
+/* вкладки настроек: семь разделов помещаются в ширину, при нехватке места переносятся */
+@media (min-width: 901px) {
+  html[data-theme="glass"] #settings-tabs { flex-wrap: wrap; overflow: visible; max-width: 100%; border-radius: 30px; }
+  html[data-theme="glass"] #settings-tabs .tab-btn { padding: 11px 20px; }
+}
+
+/* ---------- Поля выбора файла и кнопки с текстом: ничего не вылезает за рамку ---------- */
+html[data-theme="glass"] input[type="file"].form-control { display: flex; align-items: center; min-height: 52px; height: auto; padding: 5px 8px; border-radius: 999px; line-height: 1.2; overflow: hidden; }
+html[data-theme="glass"] input[type="file"]::file-selector-button { margin: 0 14px 0 0; padding: 10px 20px; border-radius: 999px; line-height: 1.2; }
+html[data-theme="glass"] .btn-icon[style*="width"] { width: auto !important; min-width: 46px; height: 46px; padding: 0 20px !important; border-radius: 999px; font-size: 14px; font-weight: 700; color: var(--text-main); white-space: nowrap; flex: none; border: 1.5px solid var(--g-accent); background: var(--g-chip); }
+html[data-theme="glass"] .btn-icon[style*="width"]:hover { background: color-mix(in srgb, var(--g-accent) 24%, var(--g-chip)); }
+html[data-theme="glass"] .copy-row { gap: 10px; }
+html[data-theme="glass"] .copy-row .btn-icon:not([style*="width"]) { width: 46px; height: 46px; flex: none; }
+html[data-theme="glass"] .copy-row .form-control { min-width: 0; }
+
+/* Плавающие уведомления (баннер обновления) – плотный фон, текст не просвечивает */
+html[data-theme="glass"] #update-banner { background: var(--g-modal); border: 1px solid var(--g-accent); border-radius: 26px; padding: 20px 22px; gap: 8px; box-shadow: 0 30px 60px -18px rgba(0, 0, 0, .6), inset 0 1px 0 var(--g-hi); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme="glass"] #update-banner .ub-title { font-family: var(--font-display); font-weight: 500; font-size: 15px; letter-spacing: -.01em; color: var(--text-main); }
+html[data-theme="glass"] #update-banner .ub-text { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+html[data-theme="glass"] #update-banner .ub-close { color: var(--text-secondary); font-size: 13.5px; padding: 8px 10px; border-radius: 999px; }
+html[data-theme="glass"] #update-banner .ub-close:hover { color: var(--text-main); background: var(--g-inset); }
+
+/* Подсказки в полях ввода: читаемы на любом тоне */
+html[data-theme="glass"][data-tone="night"] ::placeholder { color: rgba(255, 255, 255, .58); opacity: 1; }
+html[data-theme="glass"][data-tone="dawn"] ::placeholder { color: rgba(28, 34, 48, .55); opacity: 1; }
+
+/* системная настройка «уменьшить движение»: переходы и анимации почти отключаются */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* переключатель языка RU / EN */
+.lang-sw { display: inline-flex; flex: none; padding: 3px; gap: 2px; border-radius: 999px; background: var(--g-chip, rgba(255,255,255,.06)); border: 1px solid var(--g-edge, rgba(255,255,255,.12)); }
+.lang-sw button { border: 0; background: transparent; color: var(--text-secondary, inherit); font: inherit; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; padding: 0 11px; height: 34px; border-radius: 999px; cursor: pointer; }
+.lang-sw button.on { background: var(--g-pill, #f6f6f8); color: var(--g-on-pill, #17131a); }
+.lang-sw button:not(.on):hover { color: var(--text-main, inherit); }
+.appbar-side { flex: none !important; display: inline-flex; align-items: center; justify-content: flex-end; min-width: 40px; }
+.appbar-side .lang-sw button { height: 30px; padding: 0 9px; font-size: 12px; }
+
+/* всплывающее уведомление */
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 11px 20px; border-radius: 999px; background: var(--g-pill); color: var(--g-on-pill); font-size: 13px; font-weight: 700; z-index: 9999; box-shadow: 0 12px 30px -10px rgba(0, 0, 0, .5); transition: opacity .3s; opacity: 0; pointer-events: none; text-align: center; }
+
+/* метка «Обновлено …» у графика главной */
+.metrics-age { margin-left: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.metrics-age.stale { color: #ff8a8a; }
+
+/* кнопка «Исправить» рядом с результатом проверки */
+.health-row .hfix { margin-left: auto; flex: none; align-self: center; min-height: 0; padding: 7px 16px; font-size: 13px; }
+.health-idle { padding: 4px 2px; }
+
+@media (min-width: 901px) and (max-width: 1180px) { html[data-theme="glass"] .gtop-brand, html[data-theme="glass"] .gtop-ver { display: none; } }
+
+/* ---- главная: статус, четыре числа, сеть и сервер рядом, пользователи по трафику ---- */
+.d-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.d-tile { padding: 18px 22px 20px; min-width: 0; }
+.d-tile .d-label { font-size: 12.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); line-height: 16px; height: 16px; }
+.d-tile .d-num { margin-top: 10px; height: 54px; display: flex; align-items: baseline; gap: 8px; font-family: var(--font-display); font-weight: 500; letter-spacing: -.03em; font-size: clamp(30px, 3vw, 44px); line-height: 54px; white-space: nowrap; overflow: hidden; }
+.d-tile .d-num small { font-family: inherit; font-size: 16px; letter-spacing: 0; color: var(--text-muted); font-weight: 600; }
+.d-row { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.d-row > .chart-card { min-width: 0; }
+.d-speeds { display: flex; gap: 22px; flex-wrap: wrap; margin: 4px 0 6px; }
+.d-speed { display: flex; align-items: baseline; gap: 8px; font-size: 12px; color: var(--text-muted); }
+.d-speed i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; align-self: center; }
+.d-speed b { font-size: 22px; color: var(--text-main); font-weight: 700; letter-spacing: -.02em; }
+#res-card .res-bars { display: flex; flex-direction: column; gap: 14px; }
+.d-users-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.d-more { font: inherit; font-size: 13px; font-weight: 700; color: var(--text-secondary); background: none; border: 0; padding: 6px 2px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.d-more:hover { color: var(--text-main); }
+#top-traffic { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px 40px; max-height: none; }
+#top-traffic.open { max-height: 420px; overflow-y: auto; padding-right: 4px; }
+#top-traffic .bar-row .bar-track { height: 10px; }
+@media (min-width: 901px) { #top-traffic { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) {
+  .d-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .d-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) { .d-tile { padding: 14px 16px 16px; } }
+
+/* ход обновления панели */
+.upd-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(20, 22, 28, .45); backdrop-filter: blur(6px); }
+.upd-box { max-width: 420px; width: 100%; padding: 26px 28px; border-radius: 24px; background: var(--bg-card, #f2f2f4); color: var(--text-main); box-shadow: 0 20px 60px rgba(0, 0, 0, .25); display: flex; flex-direction: column; gap: 10px; }
+.upd-box h3 { margin: 0; font-size: 18px; }
+.upd-box p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
+.upd-box .btn { align-self: flex-start; margin-top: 6px; }
+.upd-spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--g-edge, rgba(0,0,0,.15)); border-top-color: var(--text-main); animation: upd-rot .9s linear infinite; }
+@keyframes upd-rot { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .upd-spin { animation-duration: 3s; } }
+
+/* настройки Xray: карточки укладываются колонками без пустых мест, а не растягиваются до высоты соседа по строке */
+#core-pane-xray .settings-grid { display: block; column-width: 380px; column-gap: 20px; }
+#core-pane-xray .settings-grid > .settings-card { break-inside: avoid; margin: 0 0 20px; width: 100%; }
+#core-pane-xray .settings-card textarea.form-control { min-height: 0; resize: vertical; }
+
+/* ---- движение: общие кривые, плавное появление экранов, окон и блоков, закрытие окон с анимацией ---- */
+html { scroll-behavior: smooth; }
+html[data-theme="glass"] { --ease: cubic-bezier(.22, .61, .36, 1); --ease-spring: cubic-bezier(.34, 1.4, .64, 1); }
+@keyframes view-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes body-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes drawer-out { from { transform: none; opacity: 1; } to { transform: translateX(40px); opacity: 0; } }
+@keyframes sheet-out { from { transform: none; opacity: 1; } to { transform: translateY(40px); opacity: 0; } }
+@keyframes dlg-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(6px) scale(.98); } }
+
+/* элементы управления меняют только нужные свойства (не all), все с одной кривой */
+html[data-theme="glass"] .btn, html[data-theme="glass"] .btn-banner, html[data-theme="glass"] .btn-icon, html[data-theme="glass"] .tab-btn,
+html[data-theme="glass"] .nav-item, html[data-theme="glass"] .chip, html[data-theme="glass"] .preset, html[data-theme="glass"] .check-row,
+html[data-theme="glass"] .link-row, html[data-theme="glass"] .user-card, html[data-theme="glass"] .core-card, html[data-theme="glass"] .form-control,
+html[data-theme="glass"] .settings-card, html[data-theme="glass"] .chart-card, html[data-theme="glass"] .stat-tile, html[data-theme="glass"] .hero {
+  transition: background-color .22s var(--ease), border-color .22s var(--ease), color .22s var(--ease), box-shadow .26s var(--ease), transform .2s var(--ease), opacity .22s var(--ease);
+}
+html[data-theme="glass"] .btn:active, html[data-theme="glass"] .btn-banner:active, html[data-theme="glass"] .btn-icon:active, html[data-theme="glass"] .tab-btn:active, html[data-theme="glass"] .chip:active { transform: scale(.97); }
+html[data-theme="glass"] .hero { transition-duration: .5s; }
+html[data-theme="glass"] .tabs-strip .tab-btn { transition-duration: .28s; }
+html[data-theme="glass"] .bar-fill { transition: width .7s var(--ease), background-color .4s var(--ease); }
+html[data-theme="glass"] .check-row input[type=checkbox]::after, html[data-theme="glass"] .switch i { transition: transform .26s var(--ease-spring), background-color .2s var(--ease); }
+html[data-theme="glass"] .core-chev { transition: transform .25s var(--ease); }
+
+/* смена экрана и раздела настроек: плавное появление (анимация запускается заново, когда блок снова показан) */
+html[data-theme="glass"] section[id^="view-"] { animation: view-in .34s var(--ease) both; }
+html[data-theme="glass"] #view-settings [data-sec] { animation: rise-in .34s var(--ease) both; }
+/* главная: блоки выезжают каскадом (контейнеры не пересоздаются при обновлении цифр, анимация не повторяется) */
+html[data-theme="glass"] .d-tiles > *, html[data-theme="glass"] .d-row > *, html[data-theme="glass"] #users-traffic-card { animation: rise-in .5s var(--ease) both; }
+html[data-theme="glass"] .d-tiles > :nth-child(2) { animation-delay: .05s; }
+html[data-theme="glass"] .d-tiles > :nth-child(3) { animation-delay: .1s; }
+html[data-theme="glass"] .d-tiles > :nth-child(4) { animation-delay: .15s; }
+html[data-theme="glass"] .d-row > :nth-child(1) { animation-delay: .2s; }
+html[data-theme="glass"] .d-row > :nth-child(2) { animation-delay: .25s; }
+html[data-theme="glass"] #users-traffic-card { animation-delay: .3s; }
+
+/* раскрывающиеся блоки */
+html[data-theme="glass"] .core-card.open .core-body:not([hidden]), html[data-theme="glass"] details[open] > *:not(summary) { animation: body-in .3s var(--ease) both; }
+
+/* окна: фон проявляется, карточка выезжает; при закрытии то же в обратную сторону */
+html[data-theme="glass"] .modal-overlay { animation: fade-in .22s var(--ease) both; }
+html[data-theme="glass"] .modal-card { animation: drawer-in .34s var(--ease) both; }
+html[data-theme="glass"] .modal-overlay.closing { animation: fade-out .2s var(--ease) both; pointer-events: none; }
+html[data-theme="glass"] .modal-overlay.closing .modal-card { animation: drawer-out .2s var(--ease) both; }
+html[data-theme="glass"] .dlg-overlay { animation: fade-in .18s var(--ease) both; }
+html[data-theme="glass"] .dlg-card { animation: dlg-in .26s var(--ease) both; }
+html[data-theme="glass"] .dlg-overlay.closing { animation: fade-out .16s var(--ease) both; pointer-events: none; }
+html[data-theme="glass"] .dlg-overlay.closing .dlg-card { animation: dlg-out .16s var(--ease) both; }
+@media (max-width: 900px) {
+  html[data-theme="glass"] .modal-card { animation-name: sheet-in; }
+  html[data-theme="glass"] .modal-overlay.closing .modal-card { animation-name: sheet-out; }
+}
+/* плашка-уведомление: плавно выезжает снизу */
+#toast { transform: translate(-50%, 10px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+#toast[style*="opacity: 1"] { transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* кнопка «Сохранить» с несохранёнными изменениями: мягкий акцент */
+.btn-banner.attn { box-shadow: 0 0 0 3px color-mix(in srgb, var(--g-accent) 35%, transparent); }
+
+
+/* ---------- Меню без прокрутки: при масштабе 100% все кнопки видны ----------
+   Ступени по высоте окна (настольная раскладка): чем ниже окно, тем компактнее пункты.
+   Свёрнутая рейка: три внешние ссылки внизу собираются в одну строку значков.
+   Развёрнутое меню: ссылки остаются с подписями, пока хватает высоты, и только на самых низких окнах становятся строкой значков. */
+@media (min-width: 901px) and (max-height: 960px) {
+  html[data-theme="glass"] .sidebar { padding-top: 8px; padding-bottom: 6px; }
+  html[data-theme="glass"] .nav-list { gap: 3px; }
+  html[data-theme="glass"] .sb-foot { padding-top: 6px; margin-top: 4px; gap: 4px; }
+  /* развёрнутое меню */
+  html[data-theme="glass"] .sidebar.expanded .nav-item { height: 46px; }
+  html[data-theme="glass"] .sidebar.expanded .nav-item .ni-ic { width: 34px; height: 34px; }
+  html[data-theme="glass"] .sidebar.expanded .nav-item .ni-ic svg { width: 20px; height: 20px; }
+  html[data-theme="glass"] .sidebar.expanded .nav-group { padding: 12px 14px 4px; }
+  html[data-theme="glass"] .sidebar.expanded .sb-logout { min-height: 46px; }
+  /* свёрнутая рейка */
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-list { gap: 2px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item { padding: 4px 2px 3px; gap: 2px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic { width: 38px; height: 38px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic svg { width: 22px; height: 22px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-tx { font-size: 10.5px; line-height: 1.1; }
+}
+@media (min-width: 901px) and (max-height: 800px) {
+  html[data-theme="glass"] .sidebar.expanded .nav-item { height: 40px; }
+  html[data-theme="glass"] .sidebar.expanded .nav-item .ni-ic { width: 30px; height: 30px; }
+  html[data-theme="glass"] .sidebar.expanded .nav-item .ni-ic svg { width: 18px; height: 18px; }
+  html[data-theme="glass"] .sidebar.expanded .nav-group { padding: 8px 14px 3px; font-size: 10.5px; }
+  html[data-theme="glass"] .sidebar.expanded .sb-logout { min-height: 40px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-list { gap: 1px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic { width: 32px; height: 32px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic svg { width: 19px; height: 19px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-tx { font-size: 10px; }
+}
+@media (min-width: 901px) and (max-height: 690px) {
+  html[data-theme="glass"] .sidebar.expanded .nav-item { height: 34px; padding-left: 6px; }
+  html[data-theme="glass"] .sidebar.expanded .nav-item .ni-ic { width: 26px; height: 26px; }
+  html[data-theme="glass"] .sidebar.expanded .nav-group { padding: 5px 14px 2px; }
+  html[data-theme="glass"] .sidebar.expanded .sb-logout { min-height: 34px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-list { gap: 0; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item { padding: 3px 2px 2px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic { width: 28px; height: 28px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-ic svg { width: 17px; height: 17px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .nav-item .ni-tx { font-size: 9.5px; }
+}
+/* ссылки внизу строкой значков: свёрнутая рейка при высоте до 960, развёрнутое меню при высоте до 740 */
+@media (min-width: 901px) and (max-height: 960px) {
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-foot { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 2px; padding-left: 0; padding-right: 0; }
+}
+@media (min-width: 901px) and (max-height: 740px) {
+  html[data-theme="glass"] .sidebar.expanded .sb-foot { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px; }
+}
+@media (min-width: 901px) and (max-height: 960px) {
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-foot > .nav-item { flex: 1 1 0; min-width: 0; flex-direction: row; height: 36px; min-height: 0; padding: 0; gap: 0; justify-content: center; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-foot > .nav-item .ni-tx { display: none !important; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-foot > .nav-item .ni-ic { width: 28px; height: 28px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-foot > .nav-item .ni-ic svg { width: 17px; height: 17px; }
+  html[data-theme="glass"] .sidebar:not(.expanded) .sb-foot-row { flex: 0 0 100%; }
+}
+@media (min-width: 901px) and (max-height: 740px) {
+  html[data-theme="glass"] .sidebar.expanded .sb-foot > .nav-item { flex: 1 1 0; min-width: 0; height: 36px; min-height: 0; padding: 0; gap: 0; justify-content: center; }
+  html[data-theme="glass"] .sidebar.expanded .sb-foot > .nav-item .ni-tx { display: none; }
+  html[data-theme="glass"] .sidebar.expanded .sb-foot-row { flex: 0 0 100%; }
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="30" viewBox="0 0 128 30" role="img" aria-label="Протоколы: 14">
+  <title>Протоколы: 14</title>
+  <clipPath id="badge"><rect width="128" height="30" rx="8"/></clipPath>
+  <g clip-path="url(#badge)">
+    <path fill="#242832" d="M0 0h95v30H0z"/>
+    <path fill="#b9440b" d="M95 0h33v30h-33z"/>
+    <rect x=".5" y=".5" width="127" height="29" rx="7.5" fill="none" stroke="#fff" stroke-opacity=".16"/>
+  </g>
+  <g font-family="DejaVu Sans,Arial,sans-serif" font-size="12" text-anchor="middle">
+    <text x="47.5" y="19.5" fill="#f7f8fa" font-weight="600">Протоколы</text>
+    <text x="111.5" y="19.5" fill="#fff" font-weight="700">14</text>
+  </g>
+</svg>

@@ -1,0 +1,26 @@
+# Рабочие файлы запуска
+/kit
+/kitsune
+/server
+/cmd/server/server
+*.db
+*.db-shm
+*.db-wal
+/bin/
+/certs/
+/logs/
+/run/
+/backups/
+/config.json
+/singbox.json
+/server
+/mtg-*.toml
+DEV_LOGIN.txt
+.DS_Store
+/PLAN.md
+/dist/
+/structure
+
+/internal/sub/certs/
+# Одноразовые файлы, которые создают тесты
+/internal/proto/certs/

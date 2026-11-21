@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="125" height="30" viewBox="0 0 125 30" role="img" aria-label="Version: 1.0.0">
+  <title>Version: 1.0.0</title>
+  <clipPath id="badge"><rect width="125" height="30" rx="8"/></clipPath>
+  <g clip-path="url(#badge)">
+    <path fill="#242832" d="M0 0h68v30H0z"/>
+    <path fill="#e8590c" d="M68 0h57v30h-57z"/>
+    <rect x=".5" y=".5" width="124" height="29" rx="7.5" fill="none" stroke="#fff" stroke-opacity=".16"/>
+  </g>
+  <g font-family="DejaVu Sans,Arial,sans-serif" font-size="12" text-anchor="middle">
+    <text x="34" y="19.5" fill="#f7f8fa" font-weight="600">Version</text>
+    <text x="96.5" y="19.5" fill="#23140c" font-weight="700">1.0.0</text>
+  </g>
+</svg>

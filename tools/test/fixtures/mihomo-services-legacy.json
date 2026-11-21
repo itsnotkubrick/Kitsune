@@ -1,0 +1,177 @@
+[
+ {
+  "id": "blocked",
+  "tier": "refilter",
+  "group": "Re:filter",
+  "label": "Сайты из списка re:filter",
+  "hint": "список re:filter – основные сайты",
+  "on": true,
+  "sets": [
+   [
+    "refilter@domain",
+    "https://github.com/legiz-ru/mihomo-rule-sets/raw/main/re-filter/domain-rule.mrs",
+    "domain"
+   ],
+   [
+    "refilter@ipcidr",
+    "https://github.com/legiz-ru/mihomo-rule-sets/raw/main/re-filter/ip-rule.mrs",
+    "ipcidr"
+   ]
+  ]
+ },
+ {
+  "id": "youtube",
+  "label": "YouTube",
+  "on": true,
+  "sets": [
+   [
+    "youtube@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs",
+    "domain"
+   ]
+  ]
+ },
+ {
+  "id": "telegram",
+  "label": "Telegram",
+  "on": true,
+  "sets": [
+   [
+    "telegram@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/telegram.mrs",
+    "domain"
+   ],
+   [
+    "telegram@ipcidr",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/telegram.mrs",
+    "ipcidr"
+   ]
+  ]
+ },
+ {
+  "id": "meta",
+  "group": "Meta",
+  "label": "Instagram, Facebook, WhatsApp",
+  "on": true,
+  "sets": [
+   [
+    "meta@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/meta.mrs",
+    "domain"
+   ],
+   [
+    "facebook@ipcidr",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/facebook.mrs",
+    "ipcidr"
+   ]
+  ]
+ },
+ {
+  "id": "twitter",
+  "group": "X",
+  "label": "X (Twitter)",
+  "on": true,
+  "sets": [
+   [
+    "twitter@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/twitter.mrs",
+    "domain"
+   ],
+   [
+    "twitter@ipcidr",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/twitter.mrs",
+    "ipcidr"
+   ]
+  ]
+ },
+ {
+  "id": "discord",
+  "label": "Discord",
+  "on": true,
+  "sets": [
+   [
+    "discord@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/discord.mrs",
+    "domain"
+   ]
+  ]
+ },
+ {
+  "id": "ai",
+  "group": "ИИ",
+  "label": "ChatGPT, Claude и другие ИИ",
+  "on": true,
+  "sets": [
+   [
+    "ai@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs",
+    "domain"
+   ]
+  ]
+ },
+ {
+  "id": "tiktok",
+  "label": "TikTok",
+  "on": false,
+  "sets": [
+   [
+    "tiktok@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/tiktok.mrs",
+    "domain"
+   ]
+  ]
+ },
+ {
+  "id": "spotify",
+  "label": "Spotify",
+  "on": false,
+  "sets": [
+   [
+    "spotify@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/spotify.mrs",
+    "domain"
+   ]
+  ]
+ },
+ {
+  "id": "netflix",
+  "label": "Netflix",
+  "on": false,
+  "sets": [
+   [
+    "netflix@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/netflix.mrs",
+    "domain"
+   ],
+   [
+    "netflix@ipcidr",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/netflix.mrs",
+    "ipcidr"
+   ]
+  ]
+ },
+ {
+  "id": "github",
+  "label": "GitHub",
+  "on": false,
+  "sets": [
+   [
+    "github@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github.mrs",
+    "domain"
+   ]
+  ]
+ },
+ {
+  "id": "twitch",
+  "label": "Twitch",
+  "on": false,
+  "sets": [
+   [
+    "twitch@domain",
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/twitch.mrs",
+    "domain"
+   ]
+  ]
+ }
+]

@@ -1,0 +1,77 @@
+# kitsune-managed v2
+# Файл создан панелью Kitsune: правки вне блока dns: при следующей генерации будут потеряны (копия прежнего файла лежит рядом: config.yaml.bak-*)
+# Сгенерировано в панели Kitsune
+# Файл для XKeen: /opt/etc/mihomo/config.yaml, затем xkeen -restart
+# Панель управления: http://192.168.1.1:9090/ui (секрет – поле secret ниже)
+log-level: warning
+allow-lan: true
+redir-port: 5000
+tproxy-port: 5001
+routing-mark: 255
+find-process-mode: "off"
+unified-delay: true
+external-controller: 192.168.1.1:9090
+external-controller-unix: "/opt/etc/mihomo/mihomo.sock"
+secret: test-secret-0123456789ab
+external-ui: zashboard
+external-ui-url: https://github.com/Zephyruso/zashboard/releases/download/v3.29.1/dist.zip
+sniffer:
+  enable: true
+  sniff:
+    HTTP: {ports: [80, 8080]}
+    TLS: {ports: [443, 8443]}
+    QUIC: {ports: [443, 8443]}
+  skip-dst-address:
+    - rule-set:telegram@ipcidr
+proxies:
+  - name: node-a
+    type: vless
+    server: "203.0.113.5"
+    port: 443
+    udp: true
+    uuid: "11111111-2222-4333-8444-555555555555"
+    flow: xtls-rprx-vision
+    network: tcp
+    tls: true
+    servername: www.example.com
+    client-fingerprint: chrome
+    reality-opts:
+      public-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      short-id: ab12cd34
+proxy-groups:
+  - name: "Прокси"
+    type: select
+    proxies:
+      - "Авто"
+    include-all: true
+  - name: "Авто"
+    type: url-test
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+    include-all: true
+rule-providers:
+  refilter@domain: {type: http, format: mrs, behavior: domain, url: https://github.com/legiz-ru/mihomo-rule-sets/raw/main/re-filter/domain-rule.mrs, path: "./rules/refilter-domain.mrs", interval: 86400}
+  refilter@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://github.com/legiz-ru/mihomo-rule-sets/raw/main/re-filter/ip-rule.mrs, path: "./rules/refilter-ipcidr.mrs", interval: 86400}
+  youtube@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs, path: "./rules/youtube-domain.mrs", interval: 86400}
+  telegram@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/telegram.mrs, path: "./rules/telegram-domain.mrs", interval: 86400}
+  telegram@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/telegram.mrs, path: "./rules/telegram-ipcidr.mrs", interval: 86400}
+  meta@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/meta.mrs, path: "./rules/meta-domain.mrs", interval: 86400}
+  facebook@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/facebook.mrs, path: "./rules/facebook-ipcidr.mrs", interval: 86400}
+  twitter@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/twitter.mrs, path: "./rules/twitter-domain.mrs", interval: 86400}
+  twitter@ipcidr: {type: http, format: mrs, behavior: ipcidr, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/twitter.mrs, path: "./rules/twitter-ipcidr.mrs", interval: 86400}
+  discord@domain: {type: http, format: mrs, behavior: domain, url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/discord.mrs, path: "./rules/discord-domain.mrs", interval: 86400}
+  ai@domain: {type: http, format: mrs, behavior: domain, url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs", path: "./rules/ai-domain.mrs", interval: 86400}
+rules:
+  - "RULE-SET,youtube@domain,Прокси"
+  - "RULE-SET,telegram@domain,Прокси"
+  - "RULE-SET,telegram@ipcidr,Прокси,no-resolve"
+  - "RULE-SET,meta@domain,Прокси"
+  - "RULE-SET,facebook@ipcidr,Прокси,no-resolve"
+  - "RULE-SET,twitter@domain,Прокси"
+  - "RULE-SET,twitter@ipcidr,Прокси,no-resolve"
+  - "RULE-SET,discord@domain,Прокси"
+  - "RULE-SET,ai@domain,Прокси"
+  - "RULE-SET,refilter@domain,Прокси"
+  - "RULE-SET,refilter@ipcidr,Прокси,no-resolve"
+  - "MATCH,DIRECT"
