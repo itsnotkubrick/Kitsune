@@ -124,6 +124,7 @@ func IPFiles(ip, contact string) (crt, key string, changed bool, err error) {
 		cfg.CADirURL = v
 	}
 	cfg.Certificate.KeyType = certcrypto.EC256
+	cfg.Certificate.DisableCommonName = true
 	cl, err := lego.NewClient(cfg)
 	if err != nil {
 		return "", "", false, err
